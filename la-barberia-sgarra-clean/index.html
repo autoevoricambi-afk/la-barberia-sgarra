@@ -1,27 +1,57 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0a0a0a" />
-  <meta name="description" content="La Barberia Sgarra ad Andria: taglio uomo, sfumature, barba, rasatura e prenotazione rapida via WhatsApp." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0c0b" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="canonical" href="/" id="canonical-link" />
+
+  <title>La Barberia Sgarra | Barbiere e Barber Shop ad Andria</title>
+  <meta name="description" content="Paolo Sgarra a Via Corato 48, Andria: taglio uomo, fade e barba. Prenota il tuo posto su WhatsApp." />
+  <meta name="robots" content="index, follow" />
+  <meta name="geo.region" content="IT-BT" />
+  <meta name="geo.placename" content="Andria" />
+
   <meta property="og:title" content="La Barberia Sgarra | Barber Shop ad Andria" />
-  <meta property="og:description" content="Taglio preciso, barba curata e prenotazione diretta via WhatsApp." />
+  <meta property="og:description" content="Precisione che si vede. Stile che ti resta. Tagli di Paolo in Via Corato." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="assets/logo-la-barberia-sgarra-premium.png" />
   <meta property="og:locale" content="it_IT" />
-  <title>La Barberia Sgarra | Barber Shop ad Andria</title>
+  <meta property="og:url" content="" id="og-url" />
+  <meta property="og:image" content="assets/brand/og-image.jpg" id="og-image" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="La Barberia Sgarra" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="La Barberia Sgarra | Barber Shop ad Andria" />
+  <meta name="twitter:description" content="Taglio uomo, fade e barba ad Andria. Scrivi a Paolo su WhatsApp." />
+  <meta name="twitter:image" content="assets/brand/og-image.jpg" id="twitter-image" />
+
+  <link rel="icon" href="assets/icons/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+
+  <link rel="preload" as="image" type="image/webp"
+    href="assets/images/hero/hero-640.webp"
+    imagesrcset="assets/images/hero/hero-640.webp 640w, assets/images/hero/hero-960.webp 960w"
+    imagesizes="100vw"
+    fetchpriority="high" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <script type="application/ld+json">
+
+  <script type="application/ld+json" id="jsonld-business">
   {
     "@context": "https://schema.org",
     "@type": "Barbershop",
     "name": "La Barberia Sgarra",
-    "image": "assets/logo-la-barberia-sgarra-premium.png",
-    "telephone": "+39 329 641 0828",
+    "description": "Barber shop ad Andria: taglio uomo, fade e barba. Prenotazione su WhatsApp con Paolo Sgarra.",
+    "image": ["assets/brand/logo-512.webp", "assets/brand/og-image.jpg"],
+    "telephone": "+393296410828",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "Via Corato 48",
@@ -30,263 +60,396 @@
       "postalCode": "76123",
       "addressCountry": "IT"
     },
+    "areaServed": { "@type": "City", "name": "Andria" },
     "sameAs": ["https://www.instagram.com/la_barberia_sgarra/"],
-    "url": "https://la-barberia-sgarra.vercel.app/"
+    "url": "/",
+    "hasMap": "https://www.google.com/maps/search/?api=1&query=La%20Barberia%20Sgarra%20Via%20Corato%2048%20Andria"
   }
   </script>
 </head>
 <body>
-  <div class="bg-orb orb-a" aria-hidden="true"></div>
-  <div class="bg-orb orb-b" aria-hidden="true"></div>
+  <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 
   <header class="site-header" id="top">
     <div class="container header-inner">
-      <a class="brand" href="#top" aria-label="La Barberia Sgarra">
-        <img src="assets/logo-la-barberia-sgarra-premium.webp" alt="Logo La Barberia Sgarra" />
-        <span>
+      <a class="brand" href="#top" aria-label="La Barberia Sgarra — inizio">
+        <img src="assets/brand/logo-512.webp" width="512" height="512" alt="La Barberia Sgarra" decoding="async" class="brand-logo" />
+        <span class="brand-text">
           <strong>La Barberia Sgarra</strong>
-          <small>Barber shop · Andria</small>
+          <small>Andria</small>
         </span>
       </a>
 
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="Apri il menu">
-        <span></span><span></span><span></span>
+      <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Apri il menu">
+        <span class="menu-toggle-bars" aria-hidden="true"><span></span><span></span><span></span></span>
       </button>
 
       <nav class="main-nav" id="main-nav" aria-label="Navigazione principale">
+        <a href="#lavori">Lavori</a>
+        <a href="#paolo">Paolo</a>
         <a href="#servizi">Servizi</a>
-        <a href="#galleria">Galleria</a>
         <a href="#prenota">Prenota</a>
-        <a href="#contatti">Contatti</a>
-        <a class="nav-instagram" href="https://www.instagram.com/la_barberia_sgarra/" target="_blank" rel="noreferrer">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm9.55 1.55a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"></path></svg>
-          <span>Instagram</span>
-        </a>
-        <a class="nav-cta" href="#prenota">Prenota ora</a>
+        <a href="#dove-siamo">Dove siamo</a>
+        <a class="nav-cta" href="#prenota" data-track="booking_start">Prenota</a>
       </nav>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="container hero-grid">
-        <div class="hero-copy reveal">
-          <p class="eyebrow">Via Corato 48 · Andria</p>
-          <h1>Un vero sito da barbiere.<br>Stile pulito, taglio preciso, prenotazione rapida.</h1>
-          <p class="hero-text">La Barberia Sgarra unisce identità, cura del dettaglio e una prenotazione semplice via WhatsApp. Un’esperienza diretta, chiara e pensata soprattutto per mobile.</p>
+  <main id="contenuto">
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-media" aria-hidden="true">
+        <video id="hero-video" class="hero-video" muted loop playsinline preload="metadata" hidden poster="assets/posters/hero-poster.webp"></video>
+        <picture id="hero-picture">
+          <source type="image/webp" srcset="assets/images/hero/hero-640.webp 640w, assets/images/hero/hero-960.webp 960w" sizes="100vw" />
+          <img src="assets/images/hero/hero-fallback.jpg" width="640" height="837" alt="" fetchpriority="high" decoding="async" />
+        </picture>
+      </div>
+      <div class="hero-veil" aria-hidden="true"></div>
 
-          <div class="hero-actions">
-            <a class="button button-primary" href="#prenota">Richiedi appuntamento</a>
-            <a class="button button-secondary" href="https://www.instagram.com/la_barberia_sgarra/" target="_blank" rel="noreferrer">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm9.55 1.55a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"></path></svg>
-              Guarda Instagram
-            </a>
-          </div>
-
-          <div class="hero-points">
-            <article>
-              <strong>Prenotazione veloce</strong>
-              <span>Messaggio già pronto su WhatsApp</span>
-            </article>
-            <article>
-              <strong>Servizi completi</strong>
-              <span>Taglio, barba, rasatura, shampoo e styling</span>
-            </article>
-            <article>
-              <strong>Barber style</strong>
-              <span>Look premium con anima da vera barberia</span>
-            </article>
-          </div>
+      <div class="container hero-content">
+        <p class="eyebrow">La Barberia Sgarra · Andria</p>
+        <h1 id="hero-title">Precisione che si vede.<br />Stile che ti resta.</h1>
+        <p class="hero-lead">Tagli, sfumature e barba realizzati da Paolo in Via Corato, ad Andria.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#prenota" data-track="hero_booking_click">Prenota il tuo posto</a>
+          <a class="button button-ghost" href="#lavori" data-track="hero_gallery_click">Guarda i lavori</a>
         </div>
-
-        <div class="hero-media reveal">
-          <div class="hero-card hero-logo-card">
-            <img src="assets/logo-la-barberia-sgarra-premium.webp" alt="Marchio La Barberia Sgarra" />
-          </div>
-          <div class="hero-card hero-shot-main">
-            <img src="assets/taglio-13.jpg" alt="Taglio barber con sfumatura precisa" loading="eager" />
-          </div>
-          <div class="hero-card hero-shot-side">
-            <img src="assets/taglio-18.jpg" alt="Taglio uomo moderno" loading="lazy" />
-          </div>
-        </div>
+        <ul class="hero-meta">
+          <li><span class="meta-k">Dove</span> <span>Via Corato 48</span></li>
+          <li><span class="meta-k">Conferma</span> <span>su WhatsApp</span></li>
+        </ul>
       </div>
     </section>
 
-    <section class="barber-strip reveal" aria-label="Valori principali">
-      <div class="container strip-grid">
-        <div><span>01</span><strong>Immagine premium</strong></div>
-        <div><span>02</span><strong>Esperienza semplice</strong></div>
-        <div><span>03</span><strong>Conversione da mobile</strong></div>
+    <!-- QUICK ACTIONS -->
+    <nav class="quick-actions" aria-label="Azioni rapide">
+      <div class="container quick-grid">
+        <a class="quick-item" href="https://wa.me/393296410828" data-track="whatsapp_direct_click" data-bind="whatsapp" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.1 4.9A9.86 9.86 0 0 0 12.1 2a9.86 9.86 0 0 0-8.48 14.85L2 22l5.3-1.56A9.9 9.9 0 1 0 19.1 4.9Zm-7 15.08a8.09 8.09 0 0 1-4.12-1.13l-.3-.18-3.14.92.95-3.06-.2-.31a8.1 8.1 0 1 1 6.81 3.77Z"/></svg>
+          <span>Scrivi a Paolo</span>
+        </a>
+        <a class="quick-item" href="https://www.google.com/maps/search/?api=1&amp;query=La%20Barberia%20Sgarra%20Via%20Corato%2048%20Andria" data-track="maps_click" data-bind="maps" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>
+          <span>Portami lì</span>
+        </a>
+        <a class="quick-item" href="https://www.instagram.com/la_barberia_sgarra/" data-track="instagram_click" data-bind="instagram" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm9.55 1.55a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg>
+          <span>Segui i lavori</span>
+        </a>
       </div>
-    </section>
+    </nav>
 
-    <section class="section" id="servizi">
+    <!-- LAVORI -->
+    <section class="section section-lavori" id="lavori" aria-labelledby="lavori-title">
       <div class="container">
-        <div class="section-head reveal">
+        <header class="section-head">
+          <p class="eyebrow">Lavori reali</p>
+          <h2 id="lavori-title">Il lavoro parla.</h2>
+          <p class="section-lead">Nessuna foto da catalogo. Solo tagli realizzati in barberia.</p>
+        </header>
+        <div class="gallery editorial-gallery" id="gallery"></div>
+        <div class="gallery-actions">
+          <button type="button" class="button button-secondary gallery-more" id="gallery-more" data-track="gallery_expand" hidden>Mostra altri lavori</button>
+        </div>
+        <a class="instagram-card" href="https://www.instagram.com/la_barberia_sgarra/" data-track="instagram_click" data-bind="instagram" target="_blank" rel="noopener noreferrer" aria-label="Segui @la_barberia_sgarra su Instagram, si apre in una nuova scheda">
+          <span class="instagram-card-kicker">Instagram</span>
+          <span class="instagram-card-handle">@la_barberia_sgarra</span>
+          <span class="instagram-card-copy">Nuovi lavori dalla barberia</span>
+          <span class="instagram-card-cta">Segui →</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- PAOLO -->
+    <section class="section section-paolo" id="paolo" aria-labelledby="paolo-title">
+      <div class="container paolo-grid">
+        <div class="paolo-media">
+          <figure class="paolo-shot paolo-shot-main">
+            <img src="assets/images/paolo/paolo-lavoro.webp" width="323" height="406" alt="Paolo al lavoro in barberia" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="paolo-shot paolo-shot-detail">
+            <img src="assets/images/paolo/paolo-dettaglio.webp" width="322" height="423" alt="Dettaglio di un taglio appena terminato" loading="lazy" decoding="async" />
+          </figure>
+        </div>
+        <div class="paolo-copy">
+          <p class="eyebrow">Dietro la poltrona</p>
+          <h2 id="paolo-title">Paolo Sgarra</h2>
+          <p class="paolo-bio" id="paolo-bio">
+            Dietro ogni lavoro c’è Paolo Sgarra, il barbiere della Barberia Sgarra ad Andria.
+          </p>
+          <div class="paolo-actions">
+            <a class="button button-primary" href="https://wa.me/393296410828" data-track="whatsapp_direct_click" data-bind="whatsapp" target="_blank" rel="noopener noreferrer">Scrivi a Paolo <span class="btn-arrow" aria-hidden="true">→</span></a>
+            <a class="button button-text" href="https://www.instagram.com/la_barberia_sgarra/" data-track="instagram_click" data-bind="instagram" target="_blank" rel="noopener noreferrer">Instagram</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVIZI -->
+    <section class="section section-servizi" id="servizi" aria-labelledby="servizi-title">
+      <div class="container">
+        <header class="section-head">
           <p class="eyebrow">Servizi</p>
-          <h2>Una proposta completa, pensata per un cliente che vuole scegliere subito e prenotare bene.</h2>
+          <h2 id="servizi-title">Scegli come vuoi uscire.</h2>
+        </header>
+        <div class="service-grid" id="service-grid" role="group" aria-labelledby="servizi-title"></div>
+        <details class="other-services" id="other-services">
+          <summary>
+            <span class="other-services-label" data-closed="Altri servizi +" data-open="Nascondi altri servizi −">Altri servizi +</span>
+          </summary>
+          <div class="service-grid service-grid-secondary" id="service-grid-secondary"></div>
+        </details>
+        <div class="service-chosen" id="service-status" role="status" aria-live="polite" hidden>
+          <p class="service-chosen-label">Hai scelto</p>
+          <div class="service-chips" id="service-chips"></div>
         </div>
-
-        <div class="services-grid">
-          <article class="service-card reveal"><span>01</span><h3>Taglio uomo</h3><p>Linee pulite, struttura precisa e rifinitura finale completa.</p></article>
-          <article class="service-card reveal"><span>02</span><h3>Fade / sfumatura</h3><p>Transizioni controllate e laterali definiti con cura.</p></article>
-          <article class="service-card reveal"><span>03</span><h3>Taglio + barba</h3><p>Servizio completo per chi vuole un risultato ordinato e coerente.</p></article>
-          <article class="service-card reveal"><span>04</span><h3>Barba</h3><p>Definizione dei contorni, simmetria e pulizia del viso.</p></article>
-          <article class="service-card reveal"><span>05</span><h3>Rasatura</h3><p>Finitura netta e presenza curata in ogni dettaglio.</p></article>
-          <article class="service-card reveal"><span>06</span><h3>Shampoo</h3><p>Detersione semplice da abbinare al servizio principale.</p></article>
-          <article class="service-card reveal"><span>07</span><h3>Doppio shampoo</h3><p>Lavaggio più completo per una chiusura più premium.</p></article>
-          <article class="service-card reveal"><span>08</span><h3>Shampoo + styling</h3><p>Finitura finale con prodotto e impostazione del look.</p></article>
-          <article class="service-card reveal"><span>09</span><h3>Cambio look</h3><p>Per chi vuole ripensare il taglio con una consulenza più mirata.</p></article>
-        </div>
+        <a class="button button-primary service-cta" href="#prenota" data-track="booking_start" id="service-cta" hidden>Continua <span class="btn-arrow" aria-hidden="true">→</span></a>
       </div>
     </section>
 
-    <section class="section gallery-section" id="galleria">
+    <!-- STUDIO / VIDEO -->
+    <section class="section section-studio" id="studio" aria-labelledby="studio-title" hidden>
       <div class="container">
-        <div class="section-head section-head-row reveal">
-          <div>
-            <p class="eyebrow">Galleria</p>
-            <h2>Tagli reali, presenza forte, identità da barber shop.</h2>
-          </div>
-          <a class="instagram-link" href="https://www.instagram.com/la_barberia_sgarra/" target="_blank" rel="noreferrer">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm9.55 1.55a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"></path></svg>
-            Profilo Instagram
-          </a>
+        <header class="section-head">
+          <p class="eyebrow">Il locale</p>
+          <h2 id="studio-title">Entra nella Barberia.</h2>
+          <p class="section-lead">Un ambiente costruito per prenderti il tuo tempo e uscire con il taglio giusto.</p>
+        </header>
+
+        <div class="studio-player" id="studio-player" hidden>
+          <button type="button" class="studio-play" id="studio-play" data-track="video_studio_play" aria-label="Riproduci video del locale">
+            <img src="assets/posters/studio-poster.webp" width="640" height="837" alt="" loading="lazy" decoding="async" />
+            <span class="play-badge">Play</span>
+          </button>
+          <video id="studio-video" controls playsinline preload="none" poster="assets/posters/studio-poster.webp" hidden></video>
         </div>
 
-        <div class="gallery-grid">
-          <figure class="gallery-card tall reveal"><img src="assets/taglio-8.jpg" alt="Sfumatura laterale" loading="lazy" /></figure>
-          <figure class="gallery-card reveal"><img src="assets/taglio-14.jpg" alt="Taglio in lavorazione" loading="lazy" /></figure>
-          <figure class="gallery-card reveal"><img src="assets/taglio-12.jpg" alt="Taglio rifinito" loading="lazy" /></figure>
-          <figure class="gallery-card tall reveal"><img src="assets/taglio-17.jpg" alt="Taglio texturizzato" loading="lazy" /></figure>
-          <figure class="gallery-card reveal"><img src="assets/taglio-4.jpg" alt="Profilo moderno" loading="lazy" /></figure>
-          <figure class="gallery-card reveal"><img src="assets/taglio-19.jpg" alt="Fade pulito" loading="lazy" /></figure>
-          <figure class="gallery-card reveal"><img src="assets/taglio-10.jpg" alt="Look con volume" loading="lazy" /></figure>
-          <figure class="gallery-card tall reveal"><img src="assets/taglio-18.jpg" alt="Taglio moderno" loading="lazy" /></figure>
-        </div>
+        <div class="studio-stills" id="studio-stills" aria-label="Ambiente della barberia" hidden></div>
+        <div class="studio-compact" id="studio-compact" hidden></div>
       </div>
     </section>
 
-    <section class="section booking-section" id="prenota">
-      <div class="container booking-grid">
-        <div class="booking-copy reveal">
+    <!-- INSTAGRAM REELS (feature-flagged) -->
+    <section class="section section-reels" id="reels" aria-labelledby="reels-title" hidden>
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow">Dal profilo</p>
+          <h2 id="reels-title">Reel selezionati</h2>
+        </header>
+        <div class="reels-grid" id="reels-grid"></div>
+      </div>
+    </section>
+
+    <!-- PRENOTAZIONE -->
+    <section class="section section-booking" id="prenota" aria-labelledby="prenota-title">
+      <div class="container booking-shell">
+        <header class="section-head">
           <p class="eyebrow">Prenotazione</p>
-          <h2>Prenota in modo semplice e chiaro.</h2>
-          <p>Seleziona i servizi, scegli il giorno e l’orario preferito. Il sito prepara il messaggio e ti porta direttamente su WhatsApp.</p>
+          <h2 id="prenota-title">Il prossimo posto può essere il tuo.</h2>
+          <p class="section-lead">Paolo confermerà giorno e orario direttamente su WhatsApp.</p>
+        </header>
 
-          <div class="info-list">
-            <div><strong>Indirizzo</strong><span>Via Corato 48, Andria</span></div>
-            <div><strong>Orari</strong><span>08:00–13:00 / 15:00–20:00</span></div>
-            <div><strong>Telefono</strong><span>329 641 0828</span></div>
-            <div><strong>Conferma</strong><span>L’appuntamento è confermato solo dopo risposta in chat.</span></div>
-          </div>
-        </div>
+        <noscript>
+          <p class="noscript-note">Scrivi su <a href="https://wa.me/393296410828">WhatsApp</a> o chiama <a href="tel:+393296410828">+39 329 641 0828</a>.</p>
+        </noscript>
 
-        <form class="booking-form reveal" id="booking-form">
-          <fieldset>
-            <legend>Servizi richiesti</legend>
-            <div class="choice-grid">
-              <label><input type="checkbox" name="service" value="Taglio uomo"><span>Taglio uomo</span></label>
-              <label><input type="checkbox" name="service" value="Fade / sfumatura"><span>Fade / sfumatura</span></label>
-              <label><input type="checkbox" name="service" value="Taglio + barba"><span>Taglio + barba</span></label>
-              <label><input type="checkbox" name="service" value="Barba"><span>Barba</span></label>
-              <label><input type="checkbox" name="service" value="Rasatura"><span>Rasatura</span></label>
-              <label><input type="checkbox" name="service" value="Shampoo"><span>Shampoo</span></label>
-              <label><input type="checkbox" name="service" value="Doppio shampoo"><span>Doppio shampoo</span></label>
-              <label><input type="checkbox" name="service" value="Shampoo + styling"><span>Shampoo + styling</span></label>
-              <label><input type="checkbox" name="service" value="Cambio look"><span>Cambio look</span></label>
+        <form class="booking-wizard" id="booking-form" novalidate>
+          <div class="wizard-progress" id="wizard-progress" role="status" aria-live="polite">Passaggio <span id="wizard-step-num">1</span> di 3</div>
+          <ol class="wizard-dots" aria-hidden="true"><li class="is-active" data-dot="1"></li><li data-dot="2"></li><li data-dot="3"></li></ol>
+          <div class="error-summary" id="error-summary" tabindex="-1" hidden><p id="error-summary-text"></p></div>
+          <div class="form-status" id="form-status" role="status" aria-live="polite"></div>
+
+          <fieldset class="wizard-step is-active" data-step="1" aria-labelledby="step-1-title">
+            <legend class="wizard-step-title" id="step-1-title" tabindex="-1">Servizio</legend>
+            <div class="wizard-selected" id="wizard-selected-services">
+              <p class="service-chosen-label">Nessun servizio selezionato</p>
+              <div class="service-chips" id="wizard-service-chips"></div>
+            </div>
+            <button type="button" class="button button-text" id="wizard-edit-services">Modifica</button>
+            <p class="field-error" id="services-error" role="alert" hidden></p>
+            <div class="wizard-nav">
+              <button type="button" class="button button-primary wizard-next" data-next="2" id="step-1-continue" disabled>Continua <span class="btn-arrow" aria-hidden="true">→</span></button>
             </div>
           </fieldset>
 
-          <div class="form-grid">
-            <label class="field">
-              <span>Nome e cognome</span>
-              <input type="text" name="customerName" placeholder="Es. Mario Rossi" autocomplete="name" required>
-            </label>
-            <label class="field">
-              <span>Telefono</span>
-              <input type="tel" name="customerPhone" placeholder="Es. 333 000 0000" autocomplete="tel" required>
-            </label>
-            <label class="field">
-              <span>Giorno</span>
-              <input type="date" name="bookingDate" id="booking-date" required>
-            </label>
-            <label class="field">
-              <span>Orario preferito</span>
-              <select name="bookingTime" required>
-                <option value="">Seleziona</option>
-                <option>08:00</option>
-                <option>09:00</option>
-                <option>10:00</option>
-                <option>11:00</option>
-                <option>12:00</option>
-                <option>15:00</option>
-                <option>16:00</option>
-                <option>17:00</option>
-                <option>18:00</option>
-                <option>19:00</option>
-              </select>
-            </label>
-            <label class="field full">
-              <span>Note facoltative</span>
-              <textarea name="bookingNotes" rows="4" placeholder="Es. preferisco un taglio corto sopra e barba più definita."></textarea>
-            </label>
-          </div>
+          <fieldset class="wizard-step" data-step="2" aria-labelledby="step-2-title" hidden>
+            <legend class="wizard-step-title" id="step-2-title" tabindex="-1">Giorno e orario</legend>
+            <div class="form-grid">
+              <div class="field date-field">
+                <label for="booking-date">Giorno</label>
+                <div class="date-control" id="date-control" data-empty="true">
+                  <span class="date-display" id="date-display-text">Scegli il giorno</span>
+                  <input type="date" id="booking-date" name="bookingDate" required aria-describedby="date-error date-hint" value="" />
+                </div>
+                <p class="visually-hidden" id="date-hint">Nessuna data predefinita. Scegli un giorno da oggi in poi.</p>
+                <p class="field-error" id="date-error" role="alert" hidden></p>
+              </div>
+              <div class="field">
+                <label for="booking-time">Orario preferito</label>
+                <select id="booking-time" name="bookingTime" required aria-describedby="time-error">
+                  <option value="">Seleziona</option>
+                  <option>08:00</option><option>09:00</option><option>10:00</option><option>11:00</option><option>12:00</option>
+                  <option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option>
+                </select>
+                <p class="field-error" id="time-error" role="alert" hidden></p>
+              </div>
+            </div>
+            <div class="wizard-nav">
+              <button type="button" class="button button-secondary wizard-back" data-back="1">Indietro</button>
+              <button type="button" class="button button-primary wizard-next" data-next="3">Controlla la richiesta <span class="btn-arrow" aria-hidden="true">→</span></button>
+            </div>
+          </fieldset>
 
-          <p class="form-error" id="form-error" role="alert" aria-live="polite"></p>
-          <button class="button button-primary form-submit" type="submit">Invia richiesta su WhatsApp</button>
+          <fieldset class="wizard-step" data-step="3" aria-labelledby="step-3-title" hidden>
+            <legend class="wizard-step-title" id="step-3-title" tabindex="-1">Il tuo nome</legend>
+            <div class="booking-summary" id="booking-summary" aria-live="polite"></div>
+            <div class="field">
+              <label for="customer-name">Nome</label>
+              <input type="text" id="customer-name" name="customerName" autocomplete="name" required aria-describedby="name-error" />
+              <p class="field-error" id="name-error" role="alert" hidden></p>
+            </div>
+            <div class="field">
+              <label for="booking-notes">Note</label>
+              <textarea id="booking-notes" name="bookingNotes" rows="3" placeholder="Facoltative"></textarea>
+            </div>
+            <div class="consent-row">
+              <label class="consent">
+                <input type="checkbox" id="booking-consent" name="consent" value="1" required aria-describedby="consent-error" />
+                <span>Paolo confermerà giorno e orario su WhatsApp.</span>
+              </label>
+              <p class="field-error" id="consent-error" role="alert" hidden></p>
+            </div>
+            <div class="wizard-nav">
+              <button type="button" class="button button-secondary wizard-back" data-back="2">Indietro</button>
+              <button class="button button-primary" type="submit">Apri WhatsApp <span class="btn-arrow" aria-hidden="true">→</span></button>
+            </div>
+          </fieldset>
         </form>
       </div>
     </section>
 
-    <section class="section contact-section" id="contatti">
+    <!-- REVIEWS (disabled until verified) -->
+    <section class="section section-reviews" id="recensioni" aria-labelledby="recensioni-title" hidden>
       <div class="container">
-        <div class="contact-card reveal">
-          <div class="contact-copy">
-            <p class="eyebrow">Contatti</p>
-            <h2>La Barberia Sgarra</h2>
-            <p>Via Corato 48, 76123 Andria (BT)</p>
-          </div>
-          <div class="contact-actions">
-            <a class="button button-primary" href="https://wa.me/393296410828" target="_blank" rel="noreferrer">WhatsApp</a>
-            <a class="button button-secondary" href="https://www.google.com/maps/search/?api=1&query=La%20Barberia%20Sgarra%20Via%20Corato%2048%20Andria" target="_blank" rel="noreferrer">Apri la mappa</a>
-            <a class="button button-secondary insta-button" href="https://www.instagram.com/la_barberia_sgarra/" target="_blank" rel="noreferrer">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm9.55 1.55a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"></path></svg>
-              Instagram
-            </a>
+        <header class="section-head">
+          <p class="eyebrow">Parole vere</p>
+          <h2 id="recensioni-title">Cosa dicono</h2>
+        </header>
+        <div class="reviews-grid" id="reviews-grid"></div>
+      </div>
+    </section>
+
+    <!-- DOVE SIAMO -->
+    <section class="section section-dove" id="dove-siamo" aria-labelledby="dove-title">
+      <div class="container dove-grid is-typo-only" id="dove-grid">
+        <div class="dove-visual" id="dove-visual" hidden></div>
+        <div class="dove-copy">
+          <p class="eyebrow">Posizione</p>
+          <h2 id="dove-title">Ci vediamo in Via Corato.</h2>
+          <p class="dove-address" id="dove-address">Via Corato 48, 76123 Andria (BT)</p>
+          <p><a href="tel:+393296410828" data-track="phone_click" data-bind="phone">+39 329 641 0828</a></p>
+          <p class="hours-note" id="hours-note" hidden></p>
+          <div class="dove-actions">
+            <a class="button button-primary dove-action-primary" href="https://www.google.com/maps/search/?api=1&amp;query=La%20Barberia%20Sgarra%20Via%20Corato%2048%20Andria" data-track="maps_click" data-bind="maps" target="_blank" rel="noopener noreferrer">Portami lì <span class="btn-arrow" aria-hidden="true">→</span></a>
+            <a class="button button-secondary dove-action-secondary" href="https://wa.me/393296410828" data-track="whatsapp_direct_click" data-bind="whatsapp" target="_blank" rel="noopener noreferrer">Scrivi a Paolo</a>
+            <a class="button button-secondary dove-action-tertiary" href="tel:+393296410828" data-track="phone_click" data-bind="phone">Chiama</a>
+            <a class="button button-secondary dove-action-tertiary" href="https://www.instagram.com/la_barberia_sgarra/" data-track="instagram_click" data-bind="instagram" target="_blank" rel="noopener noreferrer">Instagram</a>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- FAQ ridotte -->
+    <section class="section section-faq" id="faq" aria-labelledby="faq-title">
+      <div class="container">
+        <header class="section-head">
+          <p class="eyebrow">Domande</p>
+          <h2 id="faq-title">Due cose utili</h2>
+        </header>
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>L’orario che scelgo è già fissato?</summary>
+            <p>No. Paolo conferma giorno e orario nella chat WhatsApp.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Posso cambiare una richiesta già inviata?</summary>
+            <p>Sì: rispondi nella stessa chat oppure chiama il +39 329 641 0828.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA FINALE -->
+    <section class="final-cta" aria-labelledby="final-title">
+      <div class="final-cta-bg" aria-hidden="true">
+        <img src="assets/images/studio/interno-03.webp" width="322" height="423" alt="" loading="lazy" decoding="async" />
+      </div>
+      <div class="container final-cta-inner">
+        <h2 id="final-title">Il prossimo taglio comincia qui.</h2>
+        <a class="button button-primary button-lg" href="#prenota" data-track="booking_start">Prenota ora <span class="btn-arrow" aria-hidden="true">→</span></a>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-inner">
+    <div class="container footer-grid">
       <div class="footer-brand">
-        <img src="assets/logo-la-barberia-sgarra-premium.webp" alt="Logo La Barberia Sgarra" loading="lazy" />
+        <img src="assets/brand/logo-256.webp" width="256" height="256" alt="" loading="lazy" decoding="async" />
         <div>
           <strong>La Barberia Sgarra</strong>
-          <span>Barber shop · Andria</span>
+          <span>Via Corato 48 · Andria</span>
         </div>
       </div>
-
-      <div class="footer-links">
-        <a href="#servizi">Servizi</a>
-        <a href="#galleria">Galleria</a>
+      <nav class="footer-nav" aria-label="Link utili">
+        <a href="#lavori">Lavori</a>
+        <a href="#paolo">Paolo</a>
         <a href="#prenota">Prenota</a>
-        <a href="https://www.instagram.com/la_barberia_sgarra/" target="_blank" rel="noreferrer">Instagram</a>
-      </div>
-
-      <p>© <span id="year"></span> La Barberia Sgarra</p>
+        <a href="https://www.instagram.com/la_barberia_sgarra/" data-bind="instagram" data-track="instagram_click" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <a href="privacy.html">Privacy</a>
+      </nav>
+      <p class="footer-copy">© <span id="year"></span> La Barberia Sgarra · Andria</p>
     </div>
   </footer>
 
-  <a class="floating-whatsapp" href="https://wa.me/393296410828" target="_blank" rel="noreferrer" aria-label="Apri WhatsApp">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.1 4.9A9.86 9.86 0 0 0 12.1 2a9.86 9.86 0 0 0-8.48 14.85L2 22l5.3-1.56A9.9 9.9 0 1 0 19.1 4.9Zm-7 15.08a8.09 8.09 0 0 1-4.12-1.13l-.3-.18-3.14.92.95-3.06-.2-.31a8.1 8.1 0 1 1 6.81 3.77Zm4.45-6.08c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.19-.71-.63-1.19-1.4-1.33-1.64-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.48-.4-.41-.54-.42h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.1.16 1.52.1.46-.07 1.43-.58 1.63-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z"></path></svg>
-    <span>Prenota</span>
-  </a>
+  <nav class="sticky-cta" id="sticky-cta" aria-label="Azioni rapide">
+    <a class="sticky-side" href="https://wa.me/393296410828" data-track="whatsapp_direct_click" data-bind="whatsapp" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.1 4.9A9.86 9.86 0 0 0 12.1 2a9.86 9.86 0 0 0-8.48 14.85L2 22l5.3-1.56A9.9 9.9 0 1 0 19.1 4.9Zm-7 15.08a8.09 8.09 0 0 1-4.12-1.13l-.3-.18-3.14.92.95-3.06-.2-.31a8.1 8.1 0 1 1 6.81 3.77Z"/></svg>
+      <span>WhatsApp</span>
+    </a>
+    <a class="sticky-center" href="#prenota" data-track="booking_start"><span>Prenota</span></a>
+    <a class="sticky-side" href="https://www.google.com/maps/search/?api=1&amp;query=La%20Barberia%20Sgarra%20Via%20Corato%2048%20Andria" data-track="maps_click" data-bind="maps" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>
+      <span>Indicazioni</span>
+    </a>
+  </nav>
 
-  <script src="script.js"></script>
+  <div class="lightbox" id="lightbox" hidden>
+    <div class="lightbox-backdrop" data-lightbox-close tabindex="-1"></div>
+    <div class="lightbox-dialog" role="dialog" aria-modal="true" aria-label="Anteprima lavoro" tabindex="-1">
+      <button type="button" class="lightbox-close" data-lightbox-close aria-label="Chiudi">Chiudi</button>
+      <button type="button" class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="Precedente">‹</button>
+      <figure>
+        <img id="lightbox-image" alt="" width="960" height="1256" />
+        <figcaption id="lightbox-caption"></figcaption>
+        <p class="lightbox-counter" id="lightbox-counter" aria-live="polite"></p>
+      </figure>
+      <button type="button" class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="Successiva">›</button>
+    </div>
+  </div>
+
+  <div id="cookie-banner" class="cookie-banner" hidden role="dialog" aria-labelledby="cookie-title">
+    <div class="cookie-inner">
+      <h2 id="cookie-title">Cookie e misurazione</h2>
+      <p>Strumenti di misurazione solo se configurati.</p>
+      <div class="cookie-actions">
+        <button type="button" class="button button-primary" id="cookie-accept">Accetta</button>
+        <button type="button" class="button button-ghost" id="cookie-decline">Continua senza</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js?v=42e"></script>
 </body>
 </html>
