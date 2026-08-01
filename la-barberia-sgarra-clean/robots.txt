@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Aggiornare Sitemap con il dominio definitivo quando disponibile
+Sitemap: /sitemap.xml

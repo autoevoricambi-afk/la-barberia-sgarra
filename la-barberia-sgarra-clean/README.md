@@ -1,38 +1,71 @@
 # La Barberia Sgarra
 
-Pacchetto sito statico premium pronto per GitHub e Vercel.
+Landing page statica per la barberia ad Andria: taglio uomo, sfumature, barba e prenotazione via WhatsApp.
 
-## Struttura corretta del progetto
+## Stack
 
-- `index.html`
-- `styles.css`
-- `script.js`
-- `assets/`
+- HTML5 semantico
+- CSS moderno (nessun framework)
+- JavaScript vanilla (`config.js` + `script.js`)
+- Deploy statico su Vercel (nessun build)
 
-## Pubblicazione rapida
+## Avvio locale
 
-1. Apri il repository GitHub.
-2. Elimina i vecchi file se sono duplicati o confusi.
-3. Carica **direttamente nella root** questi file:
-   - `index.html`
-   - `styles.css`
-   - `script.js`
-   - cartella `assets`
-4. Su Vercel lascia come Root Directory: `/`
-5. Fai redeploy.
+Dalla root di questo progetto:
 
-## Contenuti già inclusi
+```bash
+python3 -m http.server 8080
+```
 
-- hero premium stile barber shop
-- servizi completi
-- galleria lavori
-- modulo prenotazione con invio automatico su WhatsApp
-- pulsante Instagram ben visibile
-- design mobile-first
+Apri [http://127.0.0.1:8080](http://127.0.0.1:8080).
 
-## Dati attuali nel sito
+Oppure:
 
-- Telefono / WhatsApp: `329 641 0828`
-- Instagram: `https://www.instagram.com/la_barberia_sgarra/`
-- Indirizzo: `Via Corato 48, Andria`
+```bash
+npx --yes serve -l 8080
+```
 
+## Struttura
+
+```
+/
+├── index.html
+├── privacy.html
+├── styles.css
+├── script.js
+├── config.js
+├── robots.txt
+├── sitemap.xml
+├── site.webmanifest
+├── vercel.json
+├── AUDIT.md
+├── CONTENT_TODO.md
+├── DEPLOY.md
+├── QA_REPORT.md
+└── assets/
+    ├── *.jpg / logo originali
+    ├── optimized/   # WebP e OG
+    └── icons/       # favicon
+```
+
+## Configurazione
+
+Modifica `config.js` per:
+
+- `siteUrl` — dominio definitivo
+- `GA4_MEASUREMENT_ID` / `CLARITY_PROJECT_ID` — lasciare vuoti finché non pronti
+- `debug: true` — log eventi analytics in console (senza dati sensibili)
+
+## Contatti presenti nel sito
+
+- Indirizzo: Via Corato 48, Andria
+- Telefono / WhatsApp: +39 329 641 0828
+- Instagram: [@la_barberia_sgarra](https://www.instagram.com/la_barberia_sgarra/)
+- Orari indicati: 08:00–13:00 / 15:00–20:00 (giorni da verificare — vedi `CONTENT_TODO.md`)
+
+## Documentazione
+
+- `AUDIT.md` — audit pre-ricostruzione
+- `CONTENT_TODO.md` — dati mancanti
+- `DEPLOY.md` — pubblicazione Vercel
+- `QA_REPORT.md` — test eseguiti
