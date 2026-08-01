@@ -1,408 +1,61 @@
 'use strict';
 
 /**
- * La Barberia Sgarra — application script
- * Moduli: config, analytics, nav, smooth scroll, reveal, lightbox, booking, year, SEO URL
+ * La Barberia Sgarra — Brand Experience App
  */
 (function initApp() {
   document.documentElement.classList.add('js');
-
   var config = window.SITE_CONFIG || {};
   var WHATSAPP = String(config.whatsappNumber || '393296410828');
+  var currentStep = 1;
+  var lightboxIndex = 0;
+  var galleryTriggers = [];
+  var stickyZones = {
+    hero: true,
+    prenota: false,
+    finalCta: false,
+    footer: false
+  };
+  var stickyRaf = 0;
 
+  bindConfigLinks();
   initSeoUrls();
   initYear();
+  initHeroMedia();
+  renderGallery();
+  renderServices();
+  renderStudio();
+  renderReels();
+  renderReviews();
   initAnalyticsBootstrap();
   initClickTracking();
   initMobileNav();
   initSmoothNav();
   initReveal();
   initLightbox();
-  initBookingForm();
+  initServiceSync();
+  initBookingWizard();
+  initStickyBar();
   initCookieBanner();
-
-  /* ---------- Config / SEO ---------- */
-  function initSeoUrls() {
-    var base = String(config.siteUrl || '').replace(/\/$/, '');
-    if (!base) return;
-
-    var canonical = document.getElementById('canonical-link');
-    var ogUrl = document.getElementById('og-url');
-    var ogImage = document.getElementById('og-image');
-    var twImage = document.getElementById('twitter-image');
-
-    if (canonical) canonical.setAttribute('href', base + '/');
-    if (ogUrl) ogUrl.setAttribute('content', base + '/');
-    if (ogImage) {
-      var ogSrc = ogImage.getAttribute('content') || '';
-      if (ogSrc && ogSrc.indexOf('http') !== 0) {
-        ogImage.setAttribute('content', base + '/' + ogSrc.replace(/^\//, ''));
-      }
-    }
-    if (twImage) {
-      var twSrc = twImage.getAttribute('content') || '';
-      if (twSrc && twSrc.indexOf('http') !== 0) {
-        twImage.setAttribute('content', base + '/' + twSrc.replace(/^\//, ''));
-      }
-    }
-  }
-
-  function initYear() {
-    var yearEl = document.getElementById('year');
-    if (yearEl) yearEl.textContent = String(new Date().getFullYear());
-  }
-
-  /* ---------- Analytics ---------- */
-  function trackEvent(eventName, parameters) {
-    var params = parameters && typeof parameters === 'object' ? parameters : {};
-    var safe = {};
-    Object.keys(params).forEach(function (key) {
-      if (/name|phone|note|email|message/i.test(key)) return;
-      safe[key] = params[key];
-    });
-
-    try {
-      if (Array.isArray(window.dataLayer)) {
-        window.dataLayer.push(Object.assign({ event: eventName }, safe));
-      }
-    } catch (err) {
-      /* no-op */
-    }
-
-    try {
-      if (typeof window.gtag === 'function') {
-        window.gtag('event', eventName, safe);
-      }
-    } catch (err2) {
-      /* no-op */
-    }
-
-    if (config.debug) {
-      console.info('[trackEvent]', eventName, safe);
-    }
-  }
-
-  window.trackEvent = trackEvent;
-
-  function initAnalyticsBootstrap() {
-    var gaId = String(config.GA4_MEASUREMENT_ID || '').trim();
-    var clarityId = String(config.CLARITY_PROJECT_ID || '').trim();
-    var consent = null;
-
-    try {
-      consent = localStorage.getItem('sgarra_tracking_consent');
-    } catch (e) {
-      consent = null;
-    }
-
-    if (consent !== 'accepted') return;
-    if (!gaId && !clarityId) return;
-
-    if (gaId) loadGA4(gaId);
-    if (clarityId) loadClarity(clarityId);
-  }
-
-  function loadGA4(id) {
-    if (document.getElementById('ga4-script')) return;
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function gtag() {
-      window.dataLayer.push(arguments);
-    };
-    window.gtag('js', new Date());
-    window.gtag('config', id, { anonymize_ip: true });
-
-    var s = document.createElement('script');
-    s.id = 'ga4-script';
-    s.async = true;
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);
-    document.head.appendChild(s);
-  }
-
-  function loadClarity(id) {
-    if (window.clarity) return;
-    (function (c, l, a, r, i, t, y) {
-      c[a] =
-        c[a] ||
-        function () {
-          (c[a].q = c[a].q || []).push(arguments);
-        };
-      t = l.createElement(r);
-      t.async = 1;
-      t.src = 'https://www.clarity.ms/tag/' + i;
-      y = l.getElementsByTagName(r)[0];
-      y.parentNode.insertBefore(t, y);
-    })(window, document, 'clarity', 'script', id);
-  }
-
-  function initCookieBanner() {
-    var banner = document.getElementById('cookie-banner');
-    if (!banner) return;
-
-    var hasIds =
-      String(config.GA4_MEASUREMENT_ID || '').trim() ||
-      String(config.CLARITY_PROJECT_ID || '').trim();
-    if (!hasIds || !config.showCookieBannerWhenTracking) return;
-
-    var consent = null;
-    try {
-      consent = localStorage.getItem('sgarra_tracking_consent');
-    } catch (e) {
-      consent = null;
-    }
-    if (consent) return;
-
-    banner.hidden = false;
-
-    var accept = document.getElementById('cookie-accept');
-    var decline = document.getElementById('cookie-decline');
-
-    if (accept) {
-      accept.addEventListener('click', function () {
-        try {
-          localStorage.setItem('sgarra_tracking_consent', 'accepted');
-        } catch (e2) {
-          /* no-op */
-        }
-        banner.hidden = true;
-        initAnalyticsBootstrap();
-      });
-    }
-
-    if (decline) {
-      decline.addEventListener('click', function () {
-        try {
-          localStorage.setItem('sgarra_tracking_consent', 'declined');
-        } catch (e3) {
-          /* no-op */
-        }
-        banner.hidden = true;
-      });
-    }
-  }
-
-  function initClickTracking() {
-    document.addEventListener('click', function (event) {
-      var target = event.target.closest('[data-track]');
-      if (!target) return;
-      var name = target.getAttribute('data-track');
-      if (!name) return;
-      trackEvent(name, { location: getSectionId(target) });
-    });
-
-    document.addEventListener('change', function (event) {
-      var el = event.target;
-      if (!el || !el.matches || !el.matches('[data-track-service]')) return;
-      if (el.checked) {
-        trackEvent('service_select', { service: String(el.value || '').slice(0, 40) });
-      }
-    });
-  }
-
-  function getSectionId(el) {
-    var section = el.closest('section, header, footer, .sticky-cta');
-    return section && section.id ? section.id : section && section.className ? String(section.className).split(' ')[0] : 'unknown';
-  }
-
-  /* ---------- Mobile navigation ---------- */
-  function initMobileNav() {
-    var nav = document.getElementById('main-nav');
-    var toggle = document.getElementById('menu-toggle');
-    if (!nav || !toggle) return;
-
-    var lastFocus = null;
-
-    function isOpen() {
-      return nav.classList.contains('is-open');
-    }
-
-    function openMenu() {
-      lastFocus = document.activeElement;
-      nav.classList.add('is-open');
-      toggle.setAttribute('aria-expanded', 'true');
-      toggle.setAttribute('aria-label', 'Chiudi il menu');
-      document.body.classList.add('nav-open');
-      var firstLink = nav.querySelector('a');
-      if (firstLink) firstLink.focus();
-    }
-
-    function closeMenu() {
-      if (!isOpen()) return;
-      nav.classList.remove('is-open');
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('aria-label', 'Apri il menu');
-      document.body.classList.remove('nav-open');
-      if (lastFocus && typeof lastFocus.focus === 'function') {
-        lastFocus.focus();
-      } else {
-        toggle.focus();
-      }
-    }
-
-    toggle.addEventListener('click', function () {
-      if (isOpen()) closeMenu();
-      else openMenu();
-    });
-
-    nav.querySelectorAll('a').forEach(function (link) {
-      link.addEventListener('click', closeMenu);
-    });
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && isOpen()) {
-        event.preventDefault();
-        closeMenu();
-      }
-    });
-
-    document.addEventListener('click', function (event) {
-      if (!isOpen()) return;
-      if (nav.contains(event.target) || toggle.contains(event.target)) return;
-      closeMenu();
-    });
-  }
-
-  /* ---------- Smooth navigation ---------- */
-  function initSmoothNav() {
-    document.addEventListener('click', function (event) {
-      var link = event.target.closest('a[href^="#"]');
-      if (!link) return;
-      var id = link.getAttribute('href');
-      if (!id || id === '#') return;
-      var target = document.querySelector(id);
-      if (!target) return;
-      event.preventDefault();
-      target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
-      if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
-      target.focus({ preventScroll: true });
-    });
-  }
+  initStudioPlayer();
+  initLocationSection();
+  initPaoloBio();
 
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
-  /* ---------- Reveal ---------- */
-  function initReveal() {
-    var items = Array.prototype.slice.call(document.querySelectorAll('.section-head, .service, .gallery-item, .steps li, .booking-intro, .booking-form, .contact-panel, .faq-item, .trust-item, .final-cta-inner'));
-    items.forEach(function (el) {
-      el.classList.add('reveal');
-    });
-
-    if (!('IntersectionObserver' in window) || prefersReducedMotion()) {
-      items.forEach(function (el) {
-        el.classList.add('is-visible');
-      });
-      return;
+  function saveDataPreferred() {
+    try {
+      return !!(navigator.connection && navigator.connection.saveData);
+    } catch (e) {
+      return false;
     }
-
-    var observer = new IntersectionObserver(
-      function (entries, obs) {
-        entries.forEach(function (entry) {
-          if (!entry.isIntersecting) return;
-          entry.target.classList.add('is-visible');
-          obs.unobserve(entry.target);
-        });
-      },
-      { rootMargin: '0px 0px -8% 0px', threshold: 0.1 }
-    );
-
-    items.forEach(function (el) {
-      observer.observe(el);
-    });
-  }
-
-  /* ---------- Lightbox ---------- */
-  function initLightbox() {
-    var root = document.getElementById('lightbox');
-    var img = document.getElementById('lightbox-image');
-    if (!root || !img) return;
-
-    var lastFocus = null;
-    var triggers = Array.prototype.slice.call(document.querySelectorAll('.gallery-trigger'));
-
-    function openLightbox(src, alt) {
-      lastFocus = document.activeElement;
-      img.src = src;
-      img.alt = alt || '';
-      root.hidden = false;
-      document.body.classList.add('nav-open');
-      var closeBtn = root.querySelector('.lightbox-close');
-      if (closeBtn) closeBtn.focus();
-      trackEvent('gallery_interaction', { action: 'open' });
-    }
-
-    function closeLightbox() {
-      if (root.hidden) return;
-      root.hidden = true;
-      img.removeAttribute('src');
-      img.alt = '';
-      document.body.classList.remove('nav-open');
-      if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
-    }
-
-    triggers.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        openLightbox(btn.getAttribute('data-gallery-src'), btn.getAttribute('data-gallery-alt'));
-      });
-    });
-
-    root.querySelectorAll('[data-lightbox-close]').forEach(function (el) {
-      el.addEventListener('click', closeLightbox);
-    });
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !root.hidden) {
-        event.preventDefault();
-        closeLightbox();
-      }
-    });
-  }
-
-  /* ---------- Booking form ---------- */
-  function initBookingForm() {
-    var form = document.getElementById('booking-form');
-    if (!form) return;
-
-    var dateInput = document.getElementById('booking-date');
-    if (dateInput) {
-      dateInput.min = todayISO();
-    }
-
-    var heroCta = document.getElementById('hero-whatsapp-cta');
-    if (heroCta && heroCta.getAttribute('href') === '#prenota') {
-      /* keep scroll to form; tracking already on data-track */
-    }
-
-    form.addEventListener('submit', function (event) {
-      event.preventDefault();
-      clearErrors(form);
-
-      var result = validateBooking(form);
-      if (!result.valid) {
-        trackEvent('booking_validation_error', { field: result.firstField || 'unknown' });
-        showError(result.firstField, result.message);
-        focusField(result.firstField);
-        setStatus('');
-        return;
-      }
-
-      var message = buildWhatsAppMessage(result.data);
-      var url = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(message);
-      trackEvent('whatsapp_booking_submit', {
-        services_count: result.data.services.length,
-        has_notes: Boolean(result.data.notes)
-      });
-      setStatus('Apertura di WhatsApp…');
-      window.location.href = url;
-    });
   }
 
   function todayISO() {
     var d = new Date();
-    var yyyy = d.getFullYear();
-    var mm = String(d.getMonth() + 1).padStart(2, '0');
-    var dd = String(d.getDate()).padStart(2, '0');
-    return yyyy + '-' + mm + '-' + dd;
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
   function normalizeWhitespace(value) {
@@ -411,119 +64,1201 @@
 
   function formatDateIT(iso) {
     if (!iso) return '';
-    var parts = iso.split('-');
-    if (parts.length !== 3) return iso;
-    return parts[2] + '/' + parts[1] + '/' + parts[0];
+    var p = iso.split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : iso;
   }
 
-  function validateBooking(form) {
-    var formData = new FormData(form);
-    var services = formData.getAll('service').map(normalizeWhitespace).filter(Boolean);
-    var name = normalizeWhitespace(formData.get('customerName'));
-    var phone = normalizeWhitespace(formData.get('customerPhone'));
-    var date = normalizeWhitespace(formData.get('bookingDate'));
-    var time = normalizeWhitespace(formData.get('bookingTime'));
-    var notes = normalizeWhitespace(formData.get('bookingNotes'));
-    var consent = formData.get('consent');
+  function formatDateLongIT(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    if (p.length !== 3) return iso;
+    var months = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+    var day = parseInt(p[2], 10);
+    var month = parseInt(p[1], 10) - 1;
+    if (isNaN(day) || month < 0 || month > 11) return iso;
+    return day + ' ' + months[month] + ' ' + p[0];
+  }
 
-    if (!services.length) {
-      return { valid: false, firstField: 'services', message: 'Seleziona almeno un servizio.' };
+  function getFocusable(container) {
+    return Array.prototype.slice.call(
+      container.querySelectorAll('a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')
+    ).filter(function (el) {
+      return !el.hasAttribute('hidden') && el.getClientRects().length;
+    });
+  }
+
+  function trapFocus(container, event) {
+    if (event.key !== 'Tab') return;
+    var focusable = getFocusable(container);
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
-    if (!name) {
-      return { valid: false, firstField: 'customer-name', message: 'Inserisci nome e cognome.' };
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /* ---------- Config bind ---------- */
+  function bindConfigLinks() {
+    var wa = 'https://wa.me/' + WHATSAPP;
+    var maps = config.mapsUrl || '';
+    var ig = config.instagramUrl || '';
+    var phone = config.phoneHref || 'tel:+393296410828';
+    document.querySelectorAll('[data-bind="whatsapp"]').forEach(function (el) { el.setAttribute('href', wa); });
+    document.querySelectorAll('[data-bind="maps"]').forEach(function (el) { if (maps) el.setAttribute('href', maps); });
+    document.querySelectorAll('[data-bind="instagram"]').forEach(function (el) { if (ig) el.setAttribute('href', ig); });
+    document.querySelectorAll('[data-bind="phone"]').forEach(function (el) { el.setAttribute('href', phone); if (el.tagName === 'A' && el.textContent && el.textContent.indexOf('+') === 0) el.textContent = config.phoneDisplay || el.textContent; });
+
+    var bio = document.getElementById('paolo-bio');
+    if (bio && config.barber && config.barber.bio && config.paoloBioApproved === true) {
+      bio.textContent = config.barber.bio;
     }
-    if (!phone || phone.replace(/\D/g, '').length < 8) {
-      return { valid: false, firstField: 'customer-phone', message: 'Inserisci un numero di telefono valido.' };
+  }
+
+  function initPaoloBio() {
+    var bio = document.getElementById('paolo-bio');
+    if (!bio || !config.barber) return;
+    if (config.paoloBioApproved === true && config.barber.bio) {
+      bio.textContent = config.barber.bio;
+    } else {
+      bio.textContent = config.barber.bioNeutral ||
+        'Dietro ogni lavoro c’è Paolo Sgarra, il barbiere della Barberia Sgarra ad Andria.';
     }
+  }
+
+  function initLocationSection() {
+    var grid = document.getElementById('dove-grid');
+    var visual = document.getElementById('dove-visual');
+    var hours = document.getElementById('hours-note');
+    var media = (config.locationMedia && Array.isArray(config.locationMedia.items)) ? config.locationMedia.items : [];
+
+    if (config.locationMediaApproved === true && media.length && visual) {
+      visual.hidden = false;
+      visual.textContent = '';
+      media.forEach(function (item) {
+        if (!item || !item.src) return;
+        var fig = document.createElement('figure');
+        var img = document.createElement('img');
+        img.src = item.src;
+        img.alt = item.alt || '';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        fig.appendChild(img);
+        visual.appendChild(fig);
+      });
+      if (grid) grid.classList.remove('is-typo-only');
+    } else {
+      if (visual) {
+        visual.hidden = true;
+        visual.textContent = '';
+      }
+      if (grid) grid.classList.add('is-typo-only');
+    }
+
+    if (hours) {
+      if (config.openingHoursApproved === true && config.openingHours && config.openingHours.note) {
+        hours.hidden = false;
+        hours.textContent = config.openingHours.note;
+      } else {
+        hours.hidden = true;
+        hours.textContent = '';
+      }
+    }
+  }
+
+  function initSeoUrls() {
+    var base = String(config.siteUrl || '').replace(/\/$/, '');
+    if (!base) return;
+    var canonical = document.getElementById('canonical-link');
+    var ogUrl = document.getElementById('og-url');
+    if (canonical) canonical.setAttribute('href', base + '/');
+    if (ogUrl) ogUrl.setAttribute('content', base + '/');
+    ['og-image', 'twitter-image'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var src = el.getAttribute('content') || '';
+      if (src && src.indexOf('http') !== 0) el.setAttribute('content', base + '/' + src.replace(/^\//, ''));
+    });
+  }
+
+  function initYear() {
+    var el = document.getElementById('year');
+    if (el) el.textContent = String(new Date().getFullYear());
+  }
+
+  /* ---------- Hero media Mode A/B ---------- */
+  function initHeroMedia() {
+    var media = (config.media && config.media.hero) || {};
+    var video = document.getElementById('hero-video');
+    var picture = document.getElementById('hero-picture');
+    var canVideo =
+      media.mode === 'video' &&
+      media.videoMp4 &&
+      video &&
+      !prefersReducedMotion() &&
+      !saveDataPreferred();
+
+    if (canVideo) {
+      if (media.videoWebm) {
+        var sWebm = document.createElement('source');
+        sWebm.src = media.videoWebm;
+        sWebm.type = 'video/webm';
+        video.appendChild(sWebm);
+      }
+      var sMp4 = document.createElement('source');
+      sMp4.src = media.videoMp4;
+      sMp4.type = 'video/mp4';
+      video.appendChild(sMp4);
+      video.hidden = false;
+      if (picture) picture.hidden = true;
+      video.muted = true;
+      video.setAttribute('playsinline', '');
+      var playPromise = video.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(function () {
+          video.hidden = true;
+          if (picture) picture.hidden = false;
+        });
+      }
+      trackEvent('video_hero_play', { auto: true });
+    }
+  }
+
+  /* ---------- Render gallery ---------- */
+  function renderGallery() {
+    var root = document.getElementById('gallery');
+    var more = document.getElementById('gallery-more');
+    if (!root) return;
+    var items = Array.isArray(config.gallery) ? config.gallery : [];
+    root.textContent = '';
+    items.forEach(function (item, index) {
+      var fig = document.createElement('figure');
+      fig.className = 'gallery-item' + (item.span === 'tall' ? ' is-tall' : '') + (item.span === 'wide' ? ' is-wide' : '');
+      if (index >= 6) {
+        fig.classList.add('is-extra');
+        fig.hidden = true;
+      }
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'gallery-trigger';
+      btn.setAttribute('data-gallery-index', String(index));
+      btn.setAttribute('data-gallery-src', item.src);
+      btn.setAttribute('data-gallery-alt', item.alt || '');
+      btn.setAttribute('data-gallery-caption', item.caption || '');
+      btn.setAttribute('aria-label', 'Ingrandisci: ' + (item.caption || item.alt || 'lavoro'));
+      var img = document.createElement('img');
+      img.src = item.src;
+      img.width = item.w || 320;
+      img.height = item.h || 400;
+      img.alt = item.alt || '';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      btn.appendChild(img);
+      fig.appendChild(btn);
+      if (item.caption) {
+        var cap = document.createElement('span');
+        cap.className = 'gallery-caption';
+        cap.textContent = item.caption;
+        fig.appendChild(cap);
+      }
+      root.appendChild(fig);
+    });
+
+    if (more) {
+      var extras = root.querySelectorAll('.is-extra');
+      if (extras.length && window.matchMedia('(max-width: 640px)').matches) {
+        more.hidden = false;
+        more.addEventListener('click', function () {
+          extras.forEach(function (el) { el.hidden = false; });
+          more.hidden = true;
+          trackEvent('gallery_expand', {});
+          refreshGalleryTriggers();
+        });
+      } else {
+        extras.forEach(function (el) { el.hidden = false; });
+        more.hidden = true;
+      }
+    }
+    refreshGalleryTriggers();
+  }
+
+  function refreshGalleryTriggers() {
+    galleryTriggers = Array.prototype.slice.call(document.querySelectorAll('.gallery-trigger'));
+  }
+
+  /* ---------- Services ---------- */
+  function renderServices() {
+    var primary = document.getElementById('service-grid');
+    var secondary = document.getElementById('service-grid-secondary');
+    var svc = config.services || {};
+    if (primary) fillServiceGrid(primary, svc.primary || []);
+    if (secondary) fillServiceGrid(secondary, svc.secondary || []);
+  }
+
+  function fillServiceGrid(container, list) {
+    container.textContent = '';
+    list.forEach(function (svc) {
+      var label = document.createElement('label');
+      label.className = 'service-card';
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.name = 'service';
+      input.value = svc.label;
+      input.setAttribute('form', 'booking-form');
+      input.setAttribute('data-track-service', '');
+      input.setAttribute('data-service-id', svc.id || '');
+      var selId = 'svc-sel-' + String(svc.id || svc.label).replace(/\s+/g, '-');
+      input.setAttribute('aria-describedby', selId);
+      var face = document.createElement('span');
+      face.className = 'service-face';
+      face.innerHTML =
+        '<span class="service-mark" aria-hidden="true">✓</span>' +
+        '<span class="service-selected-label" id="' + escapeHtml(selId) + '">Selezionato</span>' +
+        '<span class="service-title">' + escapeHtml(svc.label) + '</span>' +
+        '<span class="service-desc">' + escapeHtml(svc.desc || '') + '</span>';
+      label.appendChild(input);
+      label.appendChild(face);
+      container.appendChild(label);
+    });
+  }
+
+  function renderStudio() {
+    var section = document.getElementById('studio');
+    var stillsRoot = document.getElementById('studio-stills');
+    var player = document.getElementById('studio-player');
+    var studio = (config.media && config.media.studio) || {};
+    var approved = config.studioMediaApproved === true;
+    var hasVideo = Boolean(studio.videoMp4);
+
+    if (!approved && !hasVideo) {
+      if (section) {
+        section.hidden = true;
+        section.setAttribute('aria-hidden', 'true');
+      }
+      return;
+    }
+    if (section) section.hidden = false;
+
+    if (hasVideo && player) {
+      player.hidden = false;
+      var video = document.getElementById('studio-video');
+      if (video) {
+        var source = document.createElement('source');
+        source.src = studio.videoMp4;
+        source.type = 'video/mp4';
+        video.appendChild(source);
+        if (studio.poster) video.setAttribute('poster', studio.poster);
+      }
+    }
+
+    if (!stillsRoot) return;
+    stillsRoot.textContent = '';
+    if (!approved || !Array.isArray(studio.stills) || !studio.stills.length) {
+      stillsRoot.hidden = true;
+      return;
+    }
+    stillsRoot.hidden = false;
+    stillsRoot.classList.toggle('is-compact', studio.stills.length === 1);
+    studio.stills.forEach(function (still) {
+      var fig = document.createElement('figure');
+      var img = document.createElement('img');
+      img.src = still.src;
+      img.alt = still.alt || '';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.width = 320;
+      img.height = 400;
+      fig.appendChild(img);
+      stillsRoot.appendChild(fig);
+    });
+  }
+
+  function initStudioPlayer() {
+    var playBtn = document.getElementById('studio-play');
+    var video = document.getElementById('studio-video');
+    if (!playBtn || !video) return;
+    playBtn.addEventListener('click', function () {
+      playBtn.hidden = true;
+      video.hidden = false;
+      video.play();
+      trackEvent('video_studio_play', {});
+    });
+  }
+
+  function renderReels() {
+    var section = document.getElementById('reels');
+    var grid = document.getElementById('reels-grid');
+    var media = Array.isArray(config.instagramMedia) ? config.instagramMedia.filter(function (m) { return m && m.enabled; }) : [];
+    if (!section || !grid) return;
+    if (!media.length) {
+      section.remove();
+      return;
+    }
+    section.hidden = false;
+    section.removeAttribute('aria-hidden');
+    grid.textContent = '';
+    media.slice(0, 3).forEach(function (item) {
+      var card = document.createElement('article');
+      card.className = 'reel-card';
+      if (item.localVideo) {
+        var v = document.createElement('video');
+        v.src = item.localVideo;
+        v.controls = true;
+        v.playsInline = true;
+        v.preload = 'none';
+        if (item.poster) v.poster = item.poster;
+        card.appendChild(v);
+      } else if (item.poster) {
+        var img = document.createElement('img');
+        img.src = item.poster;
+        img.alt = item.title || 'Reel Instagram';
+        img.loading = 'lazy';
+        card.appendChild(img);
+      }
+      if (item.url) {
+        var a = document.createElement('a');
+        a.href = item.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.className = 'button button-ghost';
+        a.textContent = 'Guarda su Instagram';
+        a.setAttribute('data-track', 'instagram_reel_open');
+        card.appendChild(a);
+      }
+      grid.appendChild(card);
+    });
+  }
+
+  function renderReviews() {
+    var section = document.getElementById('recensioni');
+    var grid = document.getElementById('reviews-grid');
+    if (!section || !grid) return;
+    var enabled = !!config.reviewsEnabled;
+    var list = Array.isArray(config.reviews) ? config.reviews.filter(function (r) { return r && r.verified && r.text; }) : [];
+    if (!enabled || !list.length) {
+      section.remove();
+      return;
+    }
+    section.hidden = false;
+    grid.textContent = '';
+    list.forEach(function (r) {
+      var art = document.createElement('article');
+      art.className = 'review-card';
+      art.innerHTML =
+        '<p class="review-text">' + escapeHtml(r.text) + '</p>' +
+        '<p class="review-meta">' + escapeHtml(r.author || '') + (r.source ? ' · ' + escapeHtml(r.source) : '') + '</p>';
+      grid.appendChild(art);
+    });
+  }
+
+  /* ---------- Analytics ---------- */
+  function trackEvent(eventName, parameters) {
+    var params = parameters && typeof parameters === 'object' ? parameters : {};
+    var safe = {};
+    Object.keys(params).forEach(function (key) {
+      if (/name|phone|note|email|message|customer|date/i.test(key)) return;
+      safe[key] = params[key];
+    });
+    try {
+      if (Array.isArray(window.dataLayer)) window.dataLayer.push(Object.assign({ event: eventName }, safe));
+    } catch (e1) { /* no-op */ }
+    try {
+      if (typeof window.gtag === 'function') window.gtag('event', eventName, safe);
+    } catch (e2) { /* no-op */ }
+    if (config.debug) console.info('[trackEvent]', eventName, safe);
+  }
+  window.trackEvent = trackEvent;
+
+  function initAnalyticsBootstrap() {
+    var gaId = String(config.GA4_MEASUREMENT_ID || '').trim();
+    var clarityId = String(config.CLARITY_PROJECT_ID || '').trim();
+    var consent = null;
+    try { consent = localStorage.getItem('sgarra_tracking_consent'); } catch (e) { consent = null; }
+    if (consent !== 'accepted' || (!gaId && !clarityId)) return;
+    if (gaId) {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { window.dataLayer.push(arguments); };
+      window.gtag('js', new Date());
+      window.gtag('config', gaId, { anonymize_ip: true });
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(gaId);
+      document.head.appendChild(s);
+    }
+  }
+
+  function initCookieBanner() {
+    var banner = document.getElementById('cookie-banner');
+    if (!banner) return;
+    var hasIds = String(config.GA4_MEASUREMENT_ID || '').trim() || String(config.CLARITY_PROJECT_ID || '').trim();
+    if (!hasIds || !config.showCookieBannerWhenTracking) return;
+    var consent = null;
+    try { consent = localStorage.getItem('sgarra_tracking_consent'); } catch (e) { consent = null; }
+    if (consent) return;
+    banner.hidden = false;
+    var accept = document.getElementById('cookie-accept');
+    var decline = document.getElementById('cookie-decline');
+    if (accept) accept.addEventListener('click', function () {
+      try { localStorage.setItem('sgarra_tracking_consent', 'accepted'); } catch (e2) { /* no-op */ }
+      banner.hidden = true;
+      initAnalyticsBootstrap();
+    });
+    if (decline) decline.addEventListener('click', function () {
+      try { localStorage.setItem('sgarra_tracking_consent', 'declined'); } catch (e3) { /* no-op */ }
+      banner.hidden = true;
+    });
+  }
+
+  function initClickTracking() {
+    document.addEventListener('click', function (event) {
+      var target = event.target.closest('[data-track]');
+      if (!target) return;
+      var name = target.getAttribute('data-track');
+      if (name) trackEvent(name, {});
+    });
+    document.addEventListener('change', function (event) {
+      var el = event.target;
+      if (!el || !el.matches || !el.matches('[data-track-service]')) return;
+      if (el.checked) trackEvent('service_select', { service: String(el.value || '').slice(0, 40) });
+    });
+  }
+
+  /* ---------- Nav ---------- */
+  function initMobileNav() {
+    var nav = document.getElementById('main-nav');
+    var toggle = document.getElementById('menu-toggle');
+    if (!nav || !toggle) return;
+    var lastFocus = null;
+    function isOpen() { return nav.classList.contains('is-open'); }
+    function openMenu() {
+      lastFocus = document.activeElement;
+      nav.classList.add('is-open');
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.setAttribute('aria-label', 'Chiudi il menu');
+      document.body.classList.add('nav-open');
+      var first = nav.querySelector('a');
+      if (first) first.focus();
+    }
+    function closeMenu() {
+      if (!isOpen()) return;
+      nav.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Apri il menu');
+      document.body.classList.remove('nav-open');
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+    toggle.addEventListener('click', function () { isOpen() ? closeMenu() : openMenu(); });
+    nav.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', closeMenu); });
+    document.addEventListener('keydown', function (event) {
+      if (!isOpen()) return;
+      if (event.key === 'Escape') { event.preventDefault(); closeMenu(); return; }
+      trapFocus(nav, event);
+    });
+    document.addEventListener('click', function (event) {
+      if (!isOpen()) return;
+      if (nav.contains(event.target) || toggle.contains(event.target)) return;
+      closeMenu();
+    });
+  }
+
+  function getHeaderOffset() {
+    var header = document.querySelector('.site-header');
+    var h = header ? header.getBoundingClientRect().height : 64;
+    return Math.round(h + 12);
+  }
+
+  function scrollToId(id) {
+    var el = typeof id === 'string' ? document.getElementById(String(id).replace(/^#/, '')) : id;
+    if (!el) return;
+    var jump = function () {
+      var header = getHeaderOffset();
+      var se = document.scrollingElement || document.documentElement;
+      var y = se.scrollTop + el.getBoundingClientRect().top - header;
+      se.scrollTop = Math.max(0, Math.round(y));
+    };
+    jump();
+    window.requestAnimationFrame(function () {
+      jump();
+      window.requestAnimationFrame(jump);
+    });
+    window.setTimeout(jump, 80);
+    window.setTimeout(jump, 180);
+  }
+
+  function initSmoothNav() {
+    document.addEventListener('click', function (event) {
+      var link = event.target.closest('a[href^="#"]');
+      if (!link) return;
+      var id = link.getAttribute('href');
+      if (!id || id === '#') return;
+
+      if (id === '#prenota') {
+        event.preventDefault();
+        openBooking({ source: link.getAttribute('data-track') || 'hash_prenota', link: link });
+        return;
+      }
+
+      var target = document.querySelector(id);
+      if (!target) return;
+      event.preventDefault();
+      scrollToId(id);
+      if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+      try { target.focus({ preventScroll: true }); } catch (e) { target.focus(); }
+    });
+  }
+
+  function initReveal() {
+    var items = Array.prototype.slice.call(document.querySelectorAll('.section-head, .paolo-copy, .paolo-media, .booking-shell, .dove-grid, .final-cta-inner, .service-card, .gallery-item'));
+    items.forEach(function (el) { el.classList.add('reveal'); });
+    if (!('IntersectionObserver' in window) || prefersReducedMotion()) {
+      items.forEach(function (el) { el.classList.add('is-visible'); });
+      return;
+    }
+    var obs = new IntersectionObserver(function (entries, o) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        o.unobserve(entry.target);
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    items.forEach(function (el) { obs.observe(el); });
+  }
+
+  /* ---------- Lightbox ---------- */
+  function initLightbox() {
+    var root = document.getElementById('lightbox');
+    var img = document.getElementById('lightbox-image');
+    var caption = document.getElementById('lightbox-caption');
+    var counter = document.getElementById('lightbox-counter');
+    var prevBtn = document.getElementById('lightbox-prev');
+    var nextBtn = document.getElementById('lightbox-next');
+    if (!root || !img) return;
+    var lastFocus = null;
+    var touchStartX = 0;
+    var touchStartY = 0;
+
+    function visibleTriggers() {
+      return galleryTriggers.filter(function (btn) {
+        var fig = btn.closest('.gallery-item');
+        return !fig || !fig.hidden;
+      });
+    }
+
+    function showAt(index) {
+      var items = visibleTriggers();
+      if (!items.length) return;
+      lightboxIndex = (index + items.length) % items.length;
+      var btn = items[lightboxIndex];
+      img.src = btn.getAttribute('data-gallery-src') || '';
+      img.alt = btn.getAttribute('data-gallery-alt') || '';
+      if (caption) caption.textContent = btn.getAttribute('data-gallery-caption') || '';
+      if (counter) counter.textContent = (lightboxIndex + 1) + ' / ' + items.length;
+    }
+
+    function openLightbox(index) {
+      lastFocus = document.activeElement;
+      root.hidden = false;
+      document.body.classList.add('lightbox-open');
+      showAt(index);
+      trackEvent('gallery_open', {});
+      var closeBtn = root.querySelector('.lightbox-close');
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function closeLightbox() {
+      if (root.hidden) return;
+      root.hidden = true;
+      img.removeAttribute('src');
+      img.alt = '';
+      document.body.classList.remove('lightbox-open');
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+
+    document.addEventListener('click', function (event) {
+      var btn = event.target.closest('.gallery-trigger');
+      if (!btn) return;
+      var items = visibleTriggers();
+      var idx = items.indexOf(btn);
+      openLightbox(idx >= 0 ? idx : 0);
+    });
+
+    if (prevBtn) prevBtn.addEventListener('click', function () {
+      showAt(lightboxIndex - 1);
+      trackEvent('gallery_swipe', { direction: 'prev' });
+    });
+    if (nextBtn) nextBtn.addEventListener('click', function () {
+      showAt(lightboxIndex + 1);
+      trackEvent('gallery_swipe', { direction: 'next' });
+    });
+    root.querySelectorAll('[data-lightbox-close]').forEach(function (el) {
+      el.addEventListener('click', closeLightbox);
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (root.hidden) return;
+      if (event.key === 'Escape') { event.preventDefault(); closeLightbox(); return; }
+      if (event.key === 'ArrowLeft') { showAt(lightboxIndex - 1); trackEvent('gallery_swipe', { direction: 'prev' }); }
+      if (event.key === 'ArrowRight') { showAt(lightboxIndex + 1); trackEvent('gallery_swipe', { direction: 'next' }); }
+      trapFocus(root.querySelector('.lightbox-dialog') || root, event);
+    });
+
+    var dialog = root.querySelector('.lightbox-dialog');
+    if (dialog) {
+      dialog.addEventListener('touchstart', function (event) {
+        if (!event.changedTouches || !event.changedTouches[0]) return;
+        touchStartX = event.changedTouches[0].clientX;
+        touchStartY = event.changedTouches[0].clientY;
+      }, { passive: true });
+      dialog.addEventListener('touchend', function (event) {
+        if (!event.changedTouches || !event.changedTouches[0]) return;
+        var dx = event.changedTouches[0].clientX - touchStartX;
+        var dy = event.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+        if (dx < 0) { showAt(lightboxIndex + 1); trackEvent('gallery_swipe', { direction: 'next' }); }
+        else { showAt(lightboxIndex - 1); trackEvent('gallery_swipe', { direction: 'prev' }); }
+      }, { passive: true });
+    }
+  }
+
+  /* ---------- Booking ---------- */
+  function getSelectedServices() {
+    return Array.prototype.slice.call(document.querySelectorAll('input[name="service"]:checked'))
+      .map(function (el) { return normalizeWhitespace(el.value); })
+      .filter(Boolean);
+  }
+
+  function renderServiceChips(containerId) {
+    var root = document.getElementById(containerId);
+    if (!root) return;
+    root.textContent = '';
+    getSelectedServices().forEach(function (label) {
+      var chip = document.createElement('span');
+      chip.className = 'service-chip';
+      var name = document.createElement('span');
+      name.textContent = label;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'service-chip-remove';
+      btn.setAttribute('aria-label', 'Rimuovi ' + label);
+      btn.textContent = '×';
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('input[name="service"]').forEach(function (inp) {
+          if (normalizeWhitespace(inp.value) === label) inp.checked = false;
+        });
+        updateServiceUI();
+      });
+      chip.appendChild(name);
+      chip.appendChild(btn);
+      root.appendChild(chip);
+    });
+  }
+
+  function updateServiceUI() {
+    var services = getSelectedServices();
+    var status = document.getElementById('service-status');
+    var wizardBox = document.getElementById('wizard-selected-services');
+    var wizardLabel = wizardBox ? wizardBox.querySelector('.service-chosen-label') : null;
+    var continueBtn = document.getElementById('step-1-continue');
+    var cta = document.getElementById('service-cta');
+
+    if (status) {
+      status.hidden = services.length === 0;
+      renderServiceChips('service-chips');
+    }
+    if (wizardLabel) {
+      wizardLabel.textContent = services.length ? 'Hai scelto' : 'Nessun servizio selezionato';
+    }
+    renderServiceChips('wizard-service-chips');
+    if (continueBtn) continueBtn.disabled = services.length === 0;
+    if (cta) cta.hidden = services.length === 0;
+
+    if (!services.length && currentStep > 1) {
+      goToStep(1, false);
+    }
+  }
+
+  function entryBookingStep() {
+    return getSelectedServices().length ? 2 : 1;
+  }
+
+  /**
+   * Ingresso unico alla prenotazione.
+   * options: { source, forceStep, focus, scroll, skipTrack }
+   */
+  function openBooking(options) {
+    var opts = options || {};
+    var services = getSelectedServices();
+    var step = opts.forceStep != null ? Number(opts.forceStep) : (services.length ? 2 : 1);
+    if (step < 1 || step > 3) step = services.length ? 2 : 1;
+
+    goToStep(step, false);
+    updateServiceUI();
+
+    if (typeof history !== 'undefined' && history.replaceState) {
+      try {
+        history.replaceState(null, '', '#prenota');
+      } catch (e2) { /* noop */ }
+    }
+
+    if (opts.scroll !== false) {
+      window.requestAnimationFrame(function () {
+        scrollToId('prenota');
+      });
+    }
+
+    if (opts.focus !== false) {
+      window.setTimeout(function () {
+        var title = document.getElementById('step-' + step + '-title');
+        if (title) {
+          try { title.focus({ preventScroll: true }); } catch (e) { /* noop */ }
+        }
+        if (opts.scroll !== false) scrollToId('prenota');
+      }, 60);
+    }
+
+    if (!opts.skipTrack) {
+      trackEvent('booking_start', {
+        source: opts.source || 'open_booking',
+        step: step,
+        services_count: services.length,
+        skip_step_1: step === 2
+      });
+    }
+  }
+
+  function initOtherServicesDisclosure() {
+    var details = document.getElementById('other-services');
+    if (!details) return;
+    var label = details.querySelector('.other-services-label');
+    function sync() {
+      if (!label) return;
+      var open = details.open;
+      label.textContent = open
+        ? (label.getAttribute('data-open') || 'Nascondi altri servizi −')
+        : (label.getAttribute('data-closed') || 'Altri servizi +');
+    }
+    details.addEventListener('toggle', sync);
+    sync();
+  }
+
+  function initServiceSync() {
+    document.addEventListener('change', function (event) {
+      if (!event.target || !event.target.matches || !event.target.matches('input[name="service"]')) return;
+      updateServiceUI();
+      if (event.target.checked) trackEvent('service_select', { service: event.target.value });
+    });
+
+    var cta = document.getElementById('service-cta');
+    if (cta) {
+      cta.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!getSelectedServices().length) return;
+        openBooking({ source: 'services_continue' });
+      });
+    }
+
+    var edit = document.getElementById('wizard-edit-services');
+    if (edit) {
+      edit.addEventListener('click', function (event) {
+        event.preventDefault();
+        var from = currentStep;
+        goToStep(1, true);
+        trackEvent('booking_step_back', { from: from, to: 1, via: 'modifica' });
+      });
+    }
+
+    initOtherServicesDisclosure();
+    updateServiceUI();
+  }
+
+  function syncDateDisplay() {
+    var dateInput = document.getElementById('booking-date');
+    var display = document.getElementById('date-display-text');
+    var control = document.getElementById('date-control');
+    if (!dateInput || !display || !control) return;
+    var value = normalizeWhitespace(dateInput.value);
+    if (!value) {
+      display.textContent = 'Scegli il giorno';
+      control.setAttribute('data-empty', 'true');
+      dateInput.removeAttribute('aria-invalid');
+      control.removeAttribute('data-invalid');
+    } else {
+      display.textContent = formatDateLongIT(value);
+      control.setAttribute('data-empty', 'false');
+    }
+  }
+
+  function openDatePicker() {
+    var dateInput = document.getElementById('booking-date');
+    if (!dateInput) return;
+    if (typeof dateInput.showPicker === 'function') {
+      try { dateInput.showPicker(); return; } catch (e) { /* fallback */ }
+    }
+    dateInput.focus();
+    try { dateInput.click(); } catch (e2) { /* noop */ }
+  }
+
+  function initDateControl() {
+    var dateInput = document.getElementById('booking-date');
+    var control = document.getElementById('date-control');
+    if (!dateInput) return;
+    dateInput.min = todayISO();
+    dateInput.value = '';
+    syncDateDisplay();
+    dateInput.addEventListener('input', syncDateDisplay);
+    dateInput.addEventListener('change', syncDateDisplay);
+    if (control) {
+      control.addEventListener('click', function (event) {
+        if (event.target === dateInput) return;
+        openDatePicker();
+      });
+    }
+  }
+
+  function initBookingWizard() {
+    var form = document.getElementById('booking-form');
+    if (!form) return;
+    initDateControl();
+
+    if (location.hash === '#prenota') {
+      openBooking({ source: 'hash_load', skipTrack: true, instant: true });
+    } else {
+      goToStep(1, false);
+    }
+
+    window.addEventListener('hashchange', function () {
+      if (location.hash === '#prenota') {
+        openBooking({ source: 'hashchange', skipTrack: true });
+      }
+    });
+
+    form.querySelectorAll('.wizard-next').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (currentStep === 1) {
+          if (!validateStep1()) return;
+          trackEvent('booking_step_continue', { from: 1, to: 2 });
+          goToStep(2, true);
+          return;
+        }
+        if (currentStep === 2) {
+          if (!validateStep2()) return;
+          trackEvent('booking_step_continue', { from: 2, to: 3 });
+          updateSummary();
+          goToStep(3, true);
+        }
+      });
+    });
+
+    form.querySelectorAll('.wizard-back').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var back = Number(btn.getAttribute('data-back'));
+        trackEvent('booking_step_back', { from: currentStep, to: back });
+        goToStep(back, true);
+      });
+    });
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      clearErrors();
+      if (!validateStep1() || !validateStep2() || !validateStep3()) {
+        trackEvent('booking_validation_error', { step: currentStep });
+        return;
+      }
+      var data = collectData();
+      var message = buildWhatsAppMessage(data);
+      trackEvent('booking_complete', { services_count: data.services.length, has_notes: Boolean(data.notes) });
+      setStatus('Apertura di WhatsApp…');
+      window.location.href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(message);
+    });
+  }
+
+  function goToStep(step, focusTitle) {
+    currentStep = step;
+    var form = document.getElementById('booking-form');
+    if (!form) return;
+    form.querySelectorAll('.wizard-step').forEach(function (panel) {
+      var n = Number(panel.getAttribute('data-step'));
+      var active = n === step;
+      panel.hidden = !active;
+      panel.classList.toggle('is-active', active);
+      if (active) panel.setAttribute('aria-current', 'step');
+      else panel.removeAttribute('aria-current');
+    });
+    var num = document.getElementById('wizard-step-num');
+    if (num) num.textContent = String(step);
+    form.querySelectorAll('.wizard-dots li').forEach(function (dot) {
+      var n = Number(dot.getAttribute('data-dot'));
+      dot.classList.toggle('is-active', n === step);
+      dot.classList.toggle('is-done', n < step);
+    });
+    trackEvent('booking_step_view', { step: step });
+    if (focusTitle) {
+      var title = document.getElementById('step-' + step + '-title');
+      if (title) title.focus();
+    }
+    if (step === 1) updateServiceUI();
+    if (step === 3) updateSummary();
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('.field-error').forEach(function (el) { el.hidden = true; el.textContent = ''; });
+    document.querySelectorAll('[aria-invalid="true"]').forEach(function (el) { el.removeAttribute('aria-invalid'); });
+    var control = document.getElementById('date-control');
+    if (control) control.removeAttribute('data-invalid');
+    var summary = document.getElementById('error-summary');
+    if (summary) summary.hidden = true;
+    setStatus('');
+  }
+
+  function showFieldError(id, message) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = message;
+  }
+
+  function showErrorSummary(message) {
+    var box = document.getElementById('error-summary');
+    var text = document.getElementById('error-summary-text');
+    if (!box || !text) return;
+    text.textContent = message;
+    box.hidden = false;
+    box.focus();
+  }
+
+  function validateStep1() {
+    clearErrors();
+    if (!getSelectedServices().length) {
+      showFieldError('services-error', 'Seleziona almeno un servizio.');
+      showErrorSummary('Controlla il campo evidenziato.');
+      var first = document.querySelector('input[name="service"]');
+      if (first) first.focus();
+      return false;
+    }
+    return true;
+  }
+
+  function validateStep2() {
+    clearErrors();
+    var dateEl = document.getElementById('booking-date');
+    var timeEl = document.getElementById('booking-time');
+    var control = document.getElementById('date-control');
+    var date = normalizeWhitespace(dateEl && dateEl.value);
+    var time = normalizeWhitespace(timeEl && timeEl.value);
     if (!date) {
-      return { valid: false, firstField: 'booking-date', message: 'Scegli un giorno preferito.' };
+      showFieldError('date-error', 'Scegli un giorno.');
+      showErrorSummary('Controlla il campo evidenziato.');
+      if (dateEl) {
+        dateEl.setAttribute('aria-invalid', 'true');
+        if (control) control.setAttribute('data-invalid', 'true');
+        dateEl.focus();
+      }
+      return false;
     }
     if (date < todayISO()) {
-      return { valid: false, firstField: 'booking-date', message: 'Il giorno non può essere precedente a oggi.' };
-    }
-    if (!time) {
-      return { valid: false, firstField: 'booking-time', message: 'Seleziona una fascia oraria.' };
-    }
-    if (!consent) {
-      return {
-        valid: false,
-        firstField: 'booking-consent',
-        message: 'Conferma di aver compreso che l’orario va confermato in chat.'
-      };
-    }
-
-    return {
-      valid: true,
-      data: {
-        services: services,
-        name: name,
-        phone: phone,
-        date: date,
-        time: time,
-        notes: notes
+      showFieldError('date-error', 'Il giorno non può essere precedente a oggi.');
+      showErrorSummary('Controlla il campo evidenziato.');
+      if (dateEl) {
+        dateEl.setAttribute('aria-invalid', 'true');
+        if (control) control.setAttribute('data-invalid', 'true');
+        dateEl.focus();
       }
+      return false;
+    }
+    if (control) control.removeAttribute('data-invalid');
+    if (!time) {
+      showFieldError('time-error', 'Seleziona un orario.');
+      showErrorSummary('Controlla il campo evidenziato.');
+      if (timeEl) { timeEl.setAttribute('aria-invalid', 'true'); timeEl.focus(); }
+      return false;
+    }
+    return true;
+  }
+
+  function validateStep3() {
+    clearErrors();
+    var nameEl = document.getElementById('customer-name');
+    var consentEl = document.getElementById('booking-consent');
+    var name = normalizeWhitespace(nameEl && nameEl.value);
+    if (!name) {
+      showFieldError('name-error', 'Inserisci il tuo nome.');
+      showErrorSummary('Controlla il campo evidenziato.');
+      if (nameEl) { nameEl.setAttribute('aria-invalid', 'true'); nameEl.focus(); }
+      return false;
+    }
+    if (!consentEl || !consentEl.checked) {
+      showFieldError('consent-error', 'Conferma di aver letto la nota su WhatsApp.');
+      showErrorSummary('Controlla il campo evidenziato.');
+      if (consentEl) { consentEl.setAttribute('aria-invalid', 'true'); consentEl.focus(); }
+      return false;
+    }
+    return true;
+  }
+
+  function collectData() {
+    return {
+      services: getSelectedServices(),
+      name: normalizeWhitespace(document.getElementById('customer-name') && document.getElementById('customer-name').value),
+      date: normalizeWhitespace(document.getElementById('booking-date') && document.getElementById('booking-date').value),
+      time: normalizeWhitespace(document.getElementById('booking-time') && document.getElementById('booking-time').value),
+      notes: normalizeWhitespace(document.getElementById('booking-notes') && document.getElementById('booking-notes').value)
     };
+  }
+
+  function updateSummary() {
+    var box = document.getElementById('booking-summary');
+    if (!box) return;
+    var data = collectData();
+    box.innerHTML =
+      '<strong>Riepilogo</strong><br>' +
+      'Servizi: ' + escapeHtml(data.services.join(', ') || '—') + '<br>' +
+      'Giorno: ' + escapeHtml(formatDateIT(data.date) || '—') + '<br>' +
+      'Orario: ' + escapeHtml(data.time || '—') +
+      (data.name ? '<br>Nome: ' + escapeHtml(data.name) : '') +
+      (data.notes ? '<br>Note: ' + escapeHtml(data.notes) : '');
   }
 
   function buildWhatsAppMessage(data) {
     var lines = [
-      'Buongiorno, vorrei richiedere un appuntamento presso La Barberia Sgarra.',
+      'Ciao Paolo, vorrei richiedere un appuntamento.',
       '',
-      'Nome: ' + data.name,
-      'Telefono: ' + data.phone,
       'Servizio: ' + data.services.join(', '),
-      'Giorno preferito: ' + formatDateIT(data.date),
-      'Orario preferito: ' + data.time
+      'Giorno: ' + formatDateIT(data.date),
+      'Orario preferito: ' + data.time,
+      'Nome: ' + data.name
     ];
     if (data.notes) lines.push('Note: ' + data.notes);
-    lines.push('', 'Resto in attesa di conferma, grazie.');
+    lines.push('', 'Attendo la tua conferma, grazie.');
     return lines.join('\n');
-  }
-
-  function clearErrors(form) {
-    form.querySelectorAll('.field-error').forEach(function (el) {
-      el.hidden = true;
-      el.textContent = '';
-    });
-    form.querySelectorAll('[aria-invalid="true"]').forEach(function (el) {
-      el.removeAttribute('aria-invalid');
-    });
-    var group = form.querySelector('.choice-grid');
-    if (group) group.removeAttribute('aria-invalid');
-  }
-
-  function showError(fieldKey, message) {
-    var map = {
-      services: { error: 'services-error', control: '.choice-grid' },
-      'customer-name': { error: 'name-error', control: '#customer-name' },
-      'customer-phone': { error: 'phone-error', control: '#customer-phone' },
-      'booking-date': { error: 'date-error', control: '#booking-date' },
-      'booking-time': { error: 'time-error', control: '#booking-time' },
-      'booking-consent': { error: 'consent-error', control: '#booking-consent' }
-    };
-    var entry = map[fieldKey];
-    if (!entry) return;
-    var errorEl = document.getElementById(entry.error);
-    if (errorEl) {
-      errorEl.hidden = false;
-      errorEl.textContent = message;
-    }
-    var control = document.querySelector(entry.control);
-    if (control) control.setAttribute('aria-invalid', 'true');
-  }
-
-  function focusField(fieldKey) {
-    if (fieldKey === 'services') {
-      var first = document.querySelector('input[name="service"]');
-      if (first) first.focus();
-      return;
-    }
-    var el = document.getElementById(fieldKey);
-    if (el) el.focus();
   }
 
   function setStatus(text) {
     var status = document.getElementById('form-status');
     if (status) status.textContent = text || '';
+  }
+
+  function zoneVisible(el, minVisiblePx) {
+    if (!el) return false;
+    var rect = el.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var visible = Math.min(rect.bottom, vh) - Math.max(rect.top, 0);
+    return visible >= (minVisiblePx || 48);
+  }
+
+  function measureStickyZones() {
+    stickyZones.hero = zoneVisible(document.querySelector('.hero'), Math.round((window.innerHeight || 600) * 0.42));
+    stickyZones.prenota = zoneVisible(document.getElementById('prenota'), Math.round((window.innerHeight || 600) * 0.2));
+    stickyZones.finalCta = zoneVisible(document.querySelector('.final-cta'), 48);
+    stickyZones.footer = zoneVisible(document.querySelector('.site-footer'), 24);
+  }
+
+  function updateStickyVisibility() {
+    var sticky = document.getElementById('sticky-cta');
+    if (!sticky) return;
+    var hide =
+      stickyZones.hero ||
+      stickyZones.prenota ||
+      stickyZones.finalCta ||
+      stickyZones.footer ||
+      document.body.classList.contains('keyboard-open') ||
+      document.body.classList.contains('nav-open') ||
+      document.body.classList.contains('lightbox-open') ||
+      document.body.classList.contains('dialog-open');
+
+    document.body.classList.toggle('sticky-hidden', hide);
+    sticky.classList.toggle('is-hidden', hide);
+    sticky.setAttribute('aria-hidden', hide ? 'true' : 'false');
+    if (hide) sticky.style.bottom = '';
+  }
+
+  function scheduleStickyUpdate() {
+    if (stickyRaf) return;
+    stickyRaf = window.requestAnimationFrame(function () {
+      stickyRaf = 0;
+      measureStickyZones();
+      updateStickyVisibility();
+    });
+  }
+
+  function initStickyBar() {
+    function refreshKeyboardState() {
+      var active = document.activeElement;
+      var focused = !!(active && active.matches && active.matches('input, textarea, select'));
+      document.body.classList.toggle('keyboard-open', focused);
+      scheduleStickyUpdate();
+    }
+
+    document.addEventListener('focusin', function (event) {
+      var t = event.target;
+      if (t && t.matches && t.matches('input, textarea, select')) {
+        document.body.classList.add('keyboard-open');
+        updateStickyVisibility();
+      }
+    });
+    document.addEventListener('focusout', function () {
+      window.setTimeout(refreshKeyboardState, 60);
+    });
+
+    window.addEventListener('scroll', scheduleStickyUpdate, { passive: true });
+    window.addEventListener('resize', scheduleStickyUpdate);
+
+    if ('IntersectionObserver' in window) {
+      ['.hero', '#prenota', '.final-cta', '.site-footer'].forEach(function (sel) {
+        var el = document.querySelector(sel);
+        if (!el) return;
+        var io = new IntersectionObserver(function () { scheduleStickyUpdate(); }, {
+          threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
+          rootMargin: '0px'
+        });
+        io.observe(el);
+      });
+    }
+
+    if (window.visualViewport) {
+      var lastVvH = window.visualViewport.height;
+      window.visualViewport.addEventListener('resize', function () {
+        var h = window.visualViewport.height;
+        var active = document.activeElement;
+        var focused = !!(active && active.matches && active.matches('input, textarea, select'));
+        if (focused && lastVvH - h > 80) document.body.classList.add('keyboard-open');
+        else if (!focused) document.body.classList.remove('keyboard-open');
+        lastVvH = h;
+        scheduleStickyUpdate();
+      });
+      window.visualViewport.addEventListener('scroll', function () {
+        var sticky = document.getElementById('sticky-cta');
+        if (!sticky || document.body.classList.contains('sticky-hidden')) {
+          if (sticky) sticky.style.bottom = '';
+          return;
+        }
+        sticky.style.bottom = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop) + 'px';
+      });
+    }
+
+    var mo = new MutationObserver(function (mutations) {
+      var relevant = mutations.some(function (m) {
+        if (m.attributeName !== 'class') return false;
+        var cls = document.body.className;
+        return /(?:^|\s)(nav-open|lightbox-open|keyboard-open|dialog-open)(?:\s|$)/.test(cls) ||
+          m.oldValue && /nav-open|lightbox-open|keyboard-open|dialog-open/.test(m.oldValue);
+      });
+      if (relevant) scheduleStickyUpdate();
+    });
+    mo.observe(document.body, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+    measureStickyZones();
+    updateStickyVisibility();
   }
 })();
