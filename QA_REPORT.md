@@ -1,5 +1,7 @@
 # QA_REPORT — La Barberia Sgarra (redesign-premium-v2)
 
+> Archivio storico V4.2 del 1 agosto 2026. I controlli correnti e ripetibili sono in `tests/site-integrity.mjs`; il gate di pubblicazione è `docs/LAUNCH_GATE.md`.
+
 Data: 1 agosto 2026
 Ambiente: `python3 -m http.server 8080` su `http://127.0.0.1:8080/`
 Branch: `redesign-premium-v2`

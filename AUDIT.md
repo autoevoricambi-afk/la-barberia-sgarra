@@ -1,5 +1,7 @@
 # AUDIT — Brand Experience (aggiornamento)
 
+> Archivio storico V4.2 del 1 agosto 2026. Il percorso annidato indicato sotto non esiste più: l'app è ora nella root del repository. Per lo stato corrente usare `README.md`, `docs/BASELINE_2026-09-01.md` e `docs/LAUNCH_GATE.md`.
+
 Data: 1 agosto 2026
 Branch: `redesign-premium-v2`
 Path: `la-barberia-sgarra-clean/`

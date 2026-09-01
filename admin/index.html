@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#0c0c0c" />
+  <title>Agenda | La Barberia Sgarra</title>
+  <link rel="icon" href="../assets/icons/favicon.ico" />
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body">
+  <a class="skip-link" href="#admin-main">Vai all’agenda</a>
+  <header class="admin-header">
+    <a class="brand" href="../index.html" aria-label="Torna al sito">
+      <img src="../assets/brand/logo-256.webp" width="56" height="56" alt="" />
+      <span class="brand-text"><strong>La Barberia Sgarra</strong><small>Gestionale</small></span>
+    </a>
+    <button type="button" class="admin-link" id="logout" hidden>Esci</button>
+  </header>
+
+  <main id="admin-main" class="admin-main">
+    <section class="admin-login" id="login-panel" aria-labelledby="login-title">
+      <p class="eyebrow">Area riservata</p>
+      <h1 id="login-title">Agenda di Paolo</h1>
+      <p>Inserisci l’indirizzo autorizzato. Riceverai un link di accesso senza password.</p>
+      <form id="login-form" class="admin-login-form">
+        <label for="admin-email">Email</label>
+        <input id="admin-email" name="email" type="email" autocomplete="email" required />
+        <button class="button button-primary" type="submit">Invia link sicuro</button>
+      </form>
+      <p class="admin-status" id="login-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="agenda-panel" hidden>
+      <div class="admin-title-row">
+        <div>
+          <p class="eyebrow">Controllo operativo</p>
+          <h1>Agenda</h1>
+        </div>
+        <button type="button" class="button button-secondary" id="refresh-agenda">Aggiorna</button>
+      </div>
+
+      <div class="admin-date-row">
+        <label for="agenda-date">Dal giorno</label>
+        <input type="date" id="agenda-date" />
+      </div>
+
+      <section class="admin-kpis" aria-label="Riepilogo agenda">
+        <article><span>Da confermare</span><strong id="kpi-pending">0</strong></article>
+        <article><span>Confermati</span><strong id="kpi-confirmed">0</strong></article>
+        <article><span>Completati</span><strong id="kpi-completed">0</strong></article>
+      </section>
+
+      <p class="admin-status" id="agenda-status" role="status" aria-live="polite"></p>
+      <div class="agenda-list" id="agenda-list"></div>
+    </section>
+  </main>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- TODO: sostituire i path relativi con URL assoluti del dominio definitivo -->
+<!-- URL tecnico di staging: sostituire con il dominio proprietario al go-live. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>/</loc>
+    <loc>https://la-barberia-sgarra.vercel.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>/privacy.html</loc>
+    <loc>https://la-barberia-sgarra.vercel.app/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

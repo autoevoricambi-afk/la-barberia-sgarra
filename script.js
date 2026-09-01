@@ -8,6 +8,7 @@
   var config = window.SITE_CONFIG || {};
   var WHATSAPP = String(config.whatsappNumber || '393296410828');
   var currentStep = 1;
+  var bookingRequestKey = createBookingRequestKey();
   var lightboxIndex = 0;
   var galleryTriggers = [];
   var stickyZones = {
@@ -40,6 +41,7 @@
   initStudioPlayer();
   initLocationSection();
   initPaoloBio();
+  initPwa();
 
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -60,6 +62,23 @@
 
   function normalizeWhitespace(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function createBookingRequestKey() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return 'booking_' + window.crypto.randomUUID();
+    }
+    return 'booking_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 14);
+  }
+
+  function liveBookingEnabled() {
+    var booking = config.booking || {};
+    return booking.mode === 'live' && booking.serviceCatalogReady === true;
+  }
+
+  function bookingApi(path) {
+    var base = String((config.booking && config.booking.apiBase) || '/api').replace(/\/$/, '');
+    return base + path;
   }
 
   function formatDateIT(iso) {
@@ -180,6 +199,10 @@
 
   function initSeoUrls() {
     var base = String(config.siteUrl || '').replace(/\/$/, '');
+    var robots = document.getElementById('robots-meta');
+    if (robots) {
+      robots.setAttribute('content', config.launchReady === true ? 'index, follow' : 'noindex, nofollow');
+    }
     if (!base) return;
     var canonical = document.getElementById('canonical-link');
     var ogUrl = document.getElementById('og-url');
@@ -191,6 +214,24 @@
       var src = el.getAttribute('content') || '';
       if (src && src.indexOf('http') !== 0) el.setAttribute('content', base + '/' + src.replace(/^\//, ''));
     });
+
+    var jsonLd = document.getElementById('jsonld-business');
+    if (jsonLd) {
+      try {
+        var data = JSON.parse(jsonLd.textContent || '{}');
+        data.url = base + '/';
+        if (Array.isArray(data.image)) {
+          data.image = data.image.map(function (src) {
+            return String(src || '').indexOf('http') === 0
+              ? src
+              : base + '/' + String(src || '').replace(/^\//, '');
+          });
+        }
+        jsonLd.textContent = JSON.stringify(data);
+      } catch (error) {
+        if (config.debug) console.warn('[seo] JSON-LD non aggiornato', error);
+      }
+    }
   }
 
   function initYear() {
@@ -739,6 +780,12 @@
       .filter(Boolean);
   }
 
+  function getSelectedServiceIds() {
+    return Array.prototype.slice.call(document.querySelectorAll('input[name="service"]:checked'))
+      .map(function (el) { return normalizeWhitespace(el.getAttribute('data-service-id')); })
+      .filter(Boolean);
+  }
+
   function renderServiceChips(containerId) {
     var root = document.getElementById(containerId);
     if (!root) return;
@@ -783,6 +830,12 @@
     renderServiceChips('wizard-service-chips');
     if (continueBtn) continueBtn.disabled = services.length === 0;
     if (cta) cta.hidden = services.length === 0;
+
+    if (liveBookingEnabled()) {
+      var dateInput = document.getElementById('booking-date');
+      if (dateInput && dateInput.value) loadAvailability();
+      else resetAvailability('Scegli prima il giorno.');
+    }
 
     if (!services.length && currentStep > 1) {
       goToStep(1, false);
@@ -916,21 +969,101 @@
     var control = document.getElementById('date-control');
     if (!dateInput) return;
     dateInput.min = todayISO();
+    var horizon = Number((config.booking && config.booking.bookingHorizonDays) || 45);
+    var maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + Math.max(1, Math.min(horizon, 365)));
+    dateInput.max = maxDate.getFullYear() + '-' + String(maxDate.getMonth() + 1).padStart(2, '0') + '-' + String(maxDate.getDate()).padStart(2, '0');
     dateInput.value = '';
     syncDateDisplay();
     dateInput.addEventListener('input', syncDateDisplay);
-    dateInput.addEventListener('change', syncDateDisplay);
+    dateInput.addEventListener('change', function () {
+      syncDateDisplay();
+      if (liveBookingEnabled()) loadAvailability();
+    });
     if (control) {
       control.addEventListener('click', function (event) {
         if (event.target === dateInput) return;
         openDatePicker();
       });
     }
+    if (liveBookingEnabled()) resetAvailability('Scegli prima il giorno.');
+  }
+
+  function resetAvailability(message) {
+    var select = document.getElementById('booking-time');
+    var hint = document.getElementById('time-hint');
+    if (!select) return;
+    select.textContent = '';
+    var option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Seleziona';
+    select.appendChild(option);
+    select.disabled = true;
+    if (hint) hint.textContent = message || 'Scegli giorno e servizio.';
+  }
+
+  async function loadAvailability() {
+    if (!liveBookingEnabled()) return;
+    var dateInput = document.getElementById('booking-date');
+    var select = document.getElementById('booking-time');
+    var hint = document.getElementById('time-hint');
+    var serviceIds = getSelectedServiceIds();
+    var date = normalizeWhitespace(dateInput && dateInput.value);
+    if (!date || !serviceIds.length || !select) {
+      resetAvailability(!serviceIds.length ? 'Seleziona prima almeno un servizio.' : 'Scegli prima il giorno.');
+      return;
+    }
+
+    resetAvailability('Controllo degli orari disponibili…');
+    try {
+      var booking = config.booking || {};
+      var query = new URLSearchParams({
+        date: date,
+        staffSlug: booking.staffSlug || 'paolo-sgarra',
+        serviceIds: serviceIds.join(',')
+      });
+      var response = await fetch(bookingApi('/availability') + '?' + query.toString(), {
+        headers: { Accept: 'application/json' }
+      });
+      var payload = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error((payload.error && payload.error.message) || 'Disponibilità non raggiungibile.');
+      var slots = Array.isArray(payload.slots) ? payload.slots : [];
+      select.textContent = '';
+      var first = document.createElement('option');
+      first.value = '';
+      first.textContent = slots.length ? 'Seleziona un orario' : 'Nessun posto disponibile';
+      select.appendChild(first);
+      slots.forEach(function (slot) {
+        var option = document.createElement('option');
+        option.value = slot.starts_at || slot.startsAt || '';
+        option.textContent = slot.label || new Date(option.value).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        select.appendChild(option);
+      });
+      select.disabled = slots.length === 0;
+      if (hint) hint.textContent = slots.length ? slots.length + ' orari realmente disponibili.' : 'Prova un altro giorno oppure scrivi a Paolo.';
+      trackEvent('slot_view', { date: date, slots_count: slots.length });
+    } catch (error) {
+      resetAvailability(error.message || 'Disponibilità non raggiungibile.');
+    }
+  }
+
+  function configureBookingMode() {
+    var live = liveBookingEnabled();
+    var lead = document.getElementById('booking-lead');
+    var submit = document.getElementById('booking-submit');
+    var consentCopy = document.querySelector('.consent span');
+    var faqConfirmation = document.getElementById('faq-confirmation-answer');
+    if (!live) return;
+    if (lead) lead.textContent = 'Scegli uno degli orari realmente disponibili. La richiesta viene registrata e Paolo la conferma.';
+    if (submit) submit.innerHTML = 'Richiedi appuntamento <span class="btn-arrow" aria-hidden="true">→</span>';
+    if (consentCopy) consentCopy.innerHTML = 'Ho letto l’<a href="privacy.html" target="_blank" rel="noopener noreferrer">informativa privacy</a> e chiedo la registrazione dell’appuntamento.';
+    if (faqConfirmation) faqConfirmation.textContent = 'Lo slot viene riservato come richiesta e diventa definitivo quando Paolo lo conferma.';
   }
 
   function initBookingWizard() {
     var form = document.getElementById('booking-form');
     if (!form) return;
+    configureBookingMode();
     initDateControl();
 
     if (location.hash === '#prenota') {
@@ -970,7 +1103,14 @@
       });
     });
 
-    form.addEventListener('submit', function (event) {
+    var timeSelect = document.getElementById('booking-time');
+    if (timeSelect) {
+      timeSelect.addEventListener('change', function () {
+        if (timeSelect.value) trackEvent('slot_selected', { live: liveBookingEnabled() });
+      });
+    }
+
+    form.addEventListener('submit', async function (event) {
       event.preventDefault();
       clearErrors();
       if (!validateStep1() || !validateStep2() || !validateStep3()) {
@@ -978,6 +1118,47 @@
         return;
       }
       var data = collectData();
+      var submit = document.getElementById('booking-submit');
+      if (submit) submit.disabled = true;
+
+      if (liveBookingEnabled()) {
+        setStatus('Registrazione dell’appuntamento…');
+        try {
+          var response = await fetch(bookingApi('/appointments'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+              serviceIds: data.serviceIds,
+              staffSlug: (config.booking && config.booking.staffSlug) || 'paolo-sgarra',
+              startsAt: data.time,
+              name: data.name,
+              phone: data.phone,
+              notes: data.notes,
+              privacyVersion: (config.booking && config.booking.privacyVersion) || '2026-09-01',
+              idempotencyKey: bookingRequestKey,
+              website: data.website
+            })
+          });
+          var payload = await response.json().catch(function () { return {}; });
+          if (!response.ok) throw new Error((payload.error && payload.error.message) || 'Registrazione non riuscita.');
+          var success = document.getElementById('booking-success');
+          var copy = document.getElementById('booking-success-copy');
+          if (copy) {
+            copy.textContent = 'Riferimento ' + (payload.booking && payload.booking.reference ? payload.booking.reference : 'registrato') + '. Riceverai la conferma usando il recapito indicato.';
+          }
+          form.hidden = true;
+          if (success) success.hidden = false;
+          bookingRequestKey = createBookingRequestKey();
+          trackEvent('booking_confirmed', { status: (payload.booking && payload.booking.status) || 'pending' });
+          return;
+        } catch (error) {
+          setStatus(error.message || 'Registrazione non riuscita. Riprova o scrivi a Paolo.');
+          if (submit) submit.disabled = false;
+          if (/orario|disponibile/i.test(error.message || '')) loadAvailability();
+          return;
+        }
+      }
+
       var message = buildWhatsAppMessage(data);
       trackEvent('booking_complete', { services_count: data.services.length, has_notes: Boolean(data.notes) });
       setStatus('Apertura di WhatsApp…');
@@ -1091,12 +1272,20 @@
   function validateStep3() {
     clearErrors();
     var nameEl = document.getElementById('customer-name');
+    var phoneEl = document.getElementById('customer-phone');
     var consentEl = document.getElementById('booking-consent');
     var name = normalizeWhitespace(nameEl && nameEl.value);
+    var phone = normalizeWhitespace(phoneEl && phoneEl.value).replace(/[^0-9+]/g, '');
     if (!name) {
       showFieldError('name-error', 'Inserisci il tuo nome.');
       showErrorSummary('Controlla il campo evidenziato.');
       if (nameEl) { nameEl.setAttribute('aria-invalid', 'true'); nameEl.focus(); }
+      return false;
+    }
+    if (!/^(?:\+|00)?[0-9]{8,15}$/.test(phone)) {
+      showFieldError('phone-error', 'Inserisci un numero di telefono valido.');
+      showErrorSummary('Controlla il campo evidenziato.');
+      if (phoneEl) { phoneEl.setAttribute('aria-invalid', 'true'); phoneEl.focus(); }
       return false;
     }
     if (!consentEl || !consentEl.checked) {
@@ -1111,10 +1300,13 @@
   function collectData() {
     return {
       services: getSelectedServices(),
+      serviceIds: getSelectedServiceIds(),
       name: normalizeWhitespace(document.getElementById('customer-name') && document.getElementById('customer-name').value),
+      phone: normalizeWhitespace(document.getElementById('customer-phone') && document.getElementById('customer-phone').value),
       date: normalizeWhitespace(document.getElementById('booking-date') && document.getElementById('booking-date').value),
       time: normalizeWhitespace(document.getElementById('booking-time') && document.getElementById('booking-time').value),
-      notes: normalizeWhitespace(document.getElementById('booking-notes') && document.getElementById('booking-notes').value)
+      notes: normalizeWhitespace(document.getElementById('booking-notes') && document.getElementById('booking-notes').value),
+      website: normalizeWhitespace(document.getElementById('booking-website') && document.getElementById('booking-website').value)
     };
   }
 
@@ -1128,6 +1320,7 @@
       'Giorno: ' + escapeHtml(formatDateIT(data.date) || '—') + '<br>' +
       'Orario: ' + escapeHtml(data.time || '—') +
       (data.name ? '<br>Nome: ' + escapeHtml(data.name) : '') +
+      (data.phone ? '<br>Telefono: ' + escapeHtml(data.phone) : '') +
       (data.notes ? '<br>Note: ' + escapeHtml(data.notes) : '');
   }
 
@@ -1138,7 +1331,8 @@
       'Servizio: ' + data.services.join(', '),
       'Giorno: ' + formatDateIT(data.date),
       'Orario preferito: ' + data.time,
-      'Nome: ' + data.name
+      'Nome: ' + data.name,
+      'Telefono: ' + data.phone
     ];
     if (data.notes) lines.push('Note: ' + data.notes);
     lines.push('', 'Attendo la tua conferma, grazie.');
@@ -1260,5 +1454,14 @@
     mo.observe(document.body, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
     measureStickyZones();
     updateStickyVisibility();
+  }
+
+  function initPwa() {
+    if (config.pwaEnabled !== true || !('serviceWorker' in navigator)) return;
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {
+        if (config.debug && window.console) console.warn('Service worker non registrato.');
+      });
+    });
   }
 })();

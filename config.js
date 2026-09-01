@@ -3,12 +3,31 @@
  * Compilare solo dati verificati. Non inventare orari/giorni/prezzi/recensioni.
  */
 window.SITE_CONFIG = Object.freeze({
-  siteUrl: '',
-  legalName: '',
-  vatNumber: '',
+  /**
+   * launchReady resta false finché dominio, contenuti, privacy e booking
+   * non superano la checklist di lancio. In staging il sito resta noindex.
+   */
+  launchReady: false,
+  siteUrl: 'https://la-barberia-sgarra.vercel.app',
+  legalName: 'La Barberia Sgarra di Sgarra Paolo',
+  vatNumber: '08703770720',
   foundingDate: '',
   priceRange: '',
   googleBusinessUrl: '',
+
+  /**
+   * `request`: il flusso prepara WhatsApp senza salvare dati.
+   * `live`: usa API e disponibilità reali, ma soltanto con catalogo e orari approvati.
+   */
+  booking: {
+    mode: 'request',
+    apiBase: '/api',
+    staffSlug: 'paolo-sgarra',
+    serviceCatalogReady: false,
+    privacyVersion: '2026-09-01',
+    bookingHorizonDays: 45
+  },
+  pwaEnabled: false,
 
   whatsappNumber: '393296410828',
   phoneDisplay: '+39 329 641 0828',

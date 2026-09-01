@@ -1,0 +1,170 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const failures = [];
+const passes = [];
+
+function read(relativePath) {
+  return fs.readFileSync(path.join(root, relativePath), 'utf8');
+}
+
+function check(condition, message) {
+  if (condition) passes.push(message);
+  else failures.push(message);
+}
+
+function idsIn(html) {
+  return [...html.matchAll(/\sid=["']([^"']+)["']/g)].map((match) => match[1]);
+}
+
+function normalizeLocalRef(raw) {
+  const value = String(raw || '').trim();
+  if (!value || /^(?:https?:|tel:|mailto:|data:|javascript:|#)/i.test(value)) return null;
+  const withoutHash = value.split('#')[0].split('?')[0];
+  if (!withoutHash) return null;
+  if (withoutHash === '/' || withoutHash === 'index.html') return 'index.html';
+  if (withoutHash === '/privacy' || withoutHash === 'privacy') return 'privacy.html';
+  return withoutHash.replace(/^\//, '');
+}
+
+function checkDuplicateIds(relativePath, html) {
+  const ids = idsIn(html);
+  const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+  check(duplicates.length === 0, `${relativePath}: ID HTML univoci`);
+}
+
+function checkLocalFiles(relativePath, html) {
+  const refs = [
+    ...[...html.matchAll(/\s(?:href|src|poster)=["']([^"']+)["']/g)].map((match) => match[1]),
+    ...[...html.matchAll(/\ssrcset=["']([^"']+)["']/g)].flatMap((match) =>
+      match[1].split(',').map((entry) => entry.trim().split(/\s+/)[0])
+    )
+  ];
+
+  const missing = refs
+    .map(normalizeLocalRef)
+    .filter(Boolean)
+    .filter((ref) => !fs.existsSync(path.resolve(root, path.dirname(relativePath), ref)));
+
+  check(missing.length === 0, `${relativePath}: tutti i file locali esistono${missing.length ? ` (${missing.join(', ')})` : ''}`);
+}
+
+function checkHashLinks(relativePath, html, indexTargetHtml = html) {
+  const localIds = new Set(idsIn(html));
+  const indexIds = new Set(idsIn(indexTargetHtml));
+  const refs = [...html.matchAll(/href=["'](index\.html)?#([^"']+)["']/g)].map((match) => ({
+    pointsToIndex: Boolean(match[1]),
+    hash: match[2]
+  }));
+  const missing = refs
+    .filter((ref) => !(ref.pointsToIndex ? indexIds : localIds).has(ref.hash))
+    .map((ref) => ref.hash);
+  check(missing.length === 0, `${relativePath}: destinazioni hash valide${missing.length ? ` (${missing.join(', ')})` : ''}`);
+}
+
+const requiredFiles = [
+  'index.html',
+  'privacy.html',
+  'styles.css',
+  'script.js',
+  'config.js',
+  'robots.txt',
+  'sitemap.xml',
+  'site.webmanifest',
+  'vercel.json',
+  '.env.example',
+  'sw.js',
+  'admin/index.html',
+  'admin/admin.css',
+  'admin/admin.js',
+  'api/availability.js',
+  'api/appointments.js',
+  'api/admin/auth.js',
+  'api/admin/appointments.js',
+  'platform/booking-domain.mjs',
+  'tools/dev-server.mjs',
+  'supabase/migrations/202609010001_core_booking.sql',
+  'supabase/migrations/202609010002_admin_workflow.sql',
+  'docs/PAOLO_DISCOVERY.md',
+  'docs/CONTROL_ROOM.md',
+  'docs/BASELINE_2026-09-01.md',
+  'docs/BOOKING_DOMAIN_CONTRACT.md',
+  'docs/LAUNCH_GATE.md',
+  'docs/DEPLOYMENT_MAP.md'
+];
+
+requiredFiles.forEach((file) => check(fs.existsSync(path.join(root, file)), `File richiesto: ${file}`));
+check(!fs.existsSync(path.join(root, 'la-barberia-sgarra-clean')), 'Nessuna cartella applicazione annidata');
+
+const indexHtml = read('index.html');
+const privacyHtml = read('privacy.html');
+const adminHtml = read('admin/index.html');
+const configJs = read('config.js');
+const robotsTxt = read('robots.txt');
+const sitemapXml = read('sitemap.xml');
+
+checkDuplicateIds('index.html', indexHtml);
+checkDuplicateIds('privacy.html', privacyHtml);
+checkDuplicateIds('admin/index.html', adminHtml);
+checkLocalFiles('index.html', indexHtml);
+checkLocalFiles('privacy.html', privacyHtml);
+checkLocalFiles('admin/index.html', adminHtml);
+checkHashLinks('index.html', indexHtml);
+checkHashLinks('privacy.html', privacyHtml, indexHtml);
+
+const forbiddenPublicCopy = [
+  'Documento incompleto',
+  'da finalizzare',
+  'Testo da approvare',
+  'giorni da verificare'
+];
+forbiddenPublicCopy.forEach((text) => {
+  check(!indexHtml.includes(text) && !privacyHtml.includes(text), `Copy editoriale assente: ${text}`);
+});
+
+check(!indexHtml.includes('fonts.googleapis.com') && !indexHtml.includes('fonts.gstatic.com'), 'Nessun font remoto nel percorso critico');
+check(/launchReady:\s*false/.test(configJs), 'Staging protetto da launchReady=false');
+check(/mode:\s*'request'/.test(configJs), 'Booking reale disattivato finché catalogo e orari non sono approvati');
+check(/serviceCatalogReady:\s*false/.test(configJs), 'Catalogo booking protetto da feature gate');
+check(/pwaEnabled:\s*false/.test(configJs), 'Service worker disattivato durante lo staging');
+check(/siteUrl:\s*'https:\/\/la-barberia-sgarra\.vercel\.app'/.test(configJs), 'URL tecnico centralizzato');
+check(/Disallow:\s*\//.test(robotsTxt), 'robots.txt blocca lo staging');
+check(/<meta name="robots" content="noindex, nofollow" id="robots-meta"/.test(indexHtml), 'Meta robots staging presente');
+
+const sitemapUrls = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+check(sitemapUrls.length > 0 && sitemapUrls.every((url) => /^https:\/\//.test(url)), 'Sitemap contiene solo URL assoluti');
+
+const manifest = JSON.parse(read('site.webmanifest'));
+check(manifest.display === 'standalone', 'Manifest PWA standalone');
+check(Array.isArray(manifest.icons) && manifest.icons.every((icon) => fs.existsSync(path.join(root, icon.src))), 'Icone manifest presenti');
+
+const vercel = JSON.parse(read('vercel.json'));
+const headerKeys = new Set((vercel.headers || []).flatMap((rule) => (rule.headers || []).map((header) => header.key)));
+['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy', 'Permissions-Policy'].forEach((key) => {
+  check(headerKeys.has(key), `Header Vercel: ${key}`);
+});
+
+check(/id="customer-phone"/.test(indexHtml), 'Wizard raccoglie il recapito necessario alla conferma');
+check(/Nome, telefono, servizio/i.test(privacyHtml), 'Privacy coerente con i campi effettivi del wizard');
+check(privacyHtml.includes('Partita IVA 08703770720'), 'Titolare e Partita IVA presenti nella privacy');
+check(privacyHtml.includes('index.html#dove-siamo'), 'Link contatti privacy valido');
+check(/<meta name="robots" content="noindex, nofollow"/.test(adminHtml), 'Gestionale escluso dai motori di ricerca');
+
+const coreMigration = read('supabase/migrations/202609010001_core_booking.sql');
+check(coreMigration.includes('appointments_no_active_overlap'), 'Database impedisce sovrapposizioni attive');
+check(coreMigration.includes("timezone text not null default 'Europe/Rome'"), 'Timezone booking fissata a Europe/Rome');
+check(coreMigration.includes('idempotency_key text not null unique'), 'Creazione appuntamento idempotente');
+check(!/insert into public\.services\s*\(/i.test(coreMigration), 'Nessun prezzo o durata di servizio inventati nella migrazione');
+check(!/insert into public\.business_hours\s*\(/i.test(coreMigration), 'Nessun orario di apertura inventato nella migrazione');
+
+passes.forEach((message) => console.log(`PASS  ${message}`));
+
+if (failures.length) {
+  failures.forEach((message) => console.error(`FAIL  ${message}`));
+  console.error(`\n${failures.length} controllo/i non superato/i.`);
+  process.exit(1);
+}
+
+console.log(`\n${passes.length} controlli superati.`);

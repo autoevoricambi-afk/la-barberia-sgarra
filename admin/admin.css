@@ -1,0 +1,48 @@
+.admin-body { padding-bottom: 2rem; }
+.admin-header {
+  position: sticky; top: 0; z-index: 20; min-height: 64px; padding: 0.45rem max(0.8rem, env(safe-area-inset-left));
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  background: rgba(7, 9, 8, 0.96); border-bottom: 1px solid var(--line);
+}
+.admin-header .brand { display: flex; align-items: center; gap: 0.65rem; text-decoration: none; }
+.admin-header .brand img { width: 46px; height: 46px; object-fit: contain; }
+.admin-link { min-height: 44px; padding: 0.5rem 0.75rem; border: 1px solid var(--line); background: transparent; }
+.admin-main { width: min(760px, calc(100% - 1.25rem)); margin: 0 auto; padding: 2rem 0; }
+.admin-login { max-width: 29rem; margin: 4vh auto 0; padding: 1.25rem; border: 1px solid var(--line); background: var(--surface); }
+.admin-login h1, .admin-title-row h1 { margin: 0 0 0.6rem; font: 400 clamp(2rem, 9vw, 3.6rem)/1 var(--font-display); }
+.admin-login p { color: var(--cream-soft); }
+.admin-login-form { display: grid; gap: 0.65rem; margin-top: 1.2rem; }
+.admin-login-form input, .admin-date-row input {
+  min-height: 48px; padding: 0.65rem 0.75rem; border: 1px solid var(--line-strong); background: #0b0d0c;
+}
+.admin-status { min-height: 1.5rem; color: var(--brass-soft); }
+.admin-title-row { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.admin-date-row { display: grid; grid-template-columns: auto minmax(10rem, 1fr); align-items: center; gap: 0.8rem; margin: 1rem 0; }
+.admin-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 1rem 0; }
+.admin-kpis article { padding: 0.8rem; border: 1px solid var(--line); background: rgba(18,21,18,0.8); }
+.admin-kpis span { display: block; color: var(--muted); font-size: 0.72rem; }
+.admin-kpis strong { display: block; margin-top: 0.2rem; font-size: 1.7rem; }
+.agenda-list { display: grid; gap: 0.65rem; }
+.agenda-empty { padding: 2rem 1rem; text-align: center; border: 1px dashed var(--line-strong); color: var(--muted); }
+.appointment-card { padding: 1rem; border: 1px solid var(--line); background: var(--surface); }
+.appointment-top { display: flex; justify-content: space-between; gap: 1rem; }
+.appointment-time { color: var(--brass-soft); font-size: 0.82rem; font-weight: 800; text-transform: uppercase; }
+.appointment-card h2 { margin: 0.25rem 0 0; font: 400 1.55rem/1.1 var(--font-display); }
+.appointment-ref { color: var(--muted); font-size: 0.72rem; }
+.appointment-services { margin: 0.7rem 0 0; color: var(--cream-soft); }
+.appointment-phone { display: inline-block; margin-top: 0.55rem; }
+.appointment-notes { margin: 0.65rem 0 0; padding-left: 0.65rem; border-left: 2px solid var(--brass); color: var(--cream-soft); }
+.status-badge { align-self: start; padding: 0.28rem 0.45rem; border: 1px solid var(--line-strong); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; }
+.status-pending { color: #f0c879; }
+.status-confirmed { color: #9bd5a9; }
+.status-completed { color: #aeb8c6; }
+.appointment-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.9rem; }
+.appointment-actions button { min-height: 42px; padding: 0.5rem 0.7rem; border: 1px solid var(--line-strong); background: #0b0d0c; }
+.appointment-actions .primary { border-color: var(--brass); color: var(--brass-soft); }
+
+@media (max-width: 520px) {
+  .admin-kpis { grid-template-columns: 1fr; }
+  .admin-kpis article { display: flex; align-items: center; justify-content: space-between; }
+  .admin-kpis strong { margin: 0; }
+  .admin-title-row { align-items: center; }
+}

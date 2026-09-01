@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+# Staging protetto. Al go-live: Allow: / e aggiungere la sitemap assoluta.
