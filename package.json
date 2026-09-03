@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "serve": "node tools/dev-server.mjs",
-    "test:syntax": "node --check config.js && node --check script.js && node --check sw.js && node --check admin/admin.js && node --check tools/dev-server.mjs && node --check tools/backup-supabase.mjs && node --check tests/site-integrity.mjs && node --check platform/booking-domain.mjs && node --check api/health.js && node --check api/availability.js && node --check api/appointments.js && node --check api/events.js && node --check api/admin/auth.js && node --check api/admin/appointments.js && node --check api/admin/blocks.js && node --check api/admin/catalog.js && node --check api/admin/metrics.js && node --check api/cron/process-outbox.js && node --check api/_lib/logging.js && node --check api/_lib/rate-limit.js && node --check api/_lib/notifications.js",
+    "test:syntax": "node --check config.js && node --check script.js && node --check sw.js && node --check admin/admin.js && node --check tools/dev-server.mjs && node --check tools/build-static.mjs && node --check tools/backup-supabase.mjs && node --check tests/site-integrity.mjs && node --check platform/booking-domain.mjs && node --check api/health.js && node --check api/availability.js && node --check api/appointments.js && node --check api/events.js && node --check api/admin/auth.js && node --check api/admin/appointments.js && node --check api/admin/blocks.js && node --check api/admin/catalog.js && node --check api/admin/metrics.js && node --check api/cron/process-outbox.js && node --check api/_lib/logging.js && node --check api/_lib/rate-limit.js && node --check api/_lib/notifications.js",
     "test:integrity": "node tests/site-integrity.mjs",
     "test:unit": "node --test tests/*.test.mjs",
     "test": "npm run test:syntax && npm run test:integrity && npm run test:unit",
-    "build": "npm test",
+    "build": "npm test && npm run build:static",
+    "build:static": "node tools/build-static.mjs",
     "backup:encrypted": "node tools/backup-supabase.mjs"
   }
 }

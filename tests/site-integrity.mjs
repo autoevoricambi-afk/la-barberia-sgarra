@@ -93,6 +93,7 @@ const requiredFiles = [
   'api/_lib/rate-limit.js',
   'platform/booking-domain.mjs',
   'tools/dev-server.mjs',
+  'tools/build-static.mjs',
   'supabase/migrations/202609010001_core_booking.sql',
   'supabase/migrations/202609010002_admin_workflow.sql',
   'supabase/migrations/202609020003_operational_pilot.sql',
@@ -187,6 +188,9 @@ const envTemplate = read('.env.example');
 ['RATE_LIMIT_SALT', 'CRON_SECRET', 'BACKUP_ENCRYPTION_KEY'].forEach((key) => {
   check(envTemplate.includes(`${key}=`), `Variabile operativa documentata: ${key}`);
 });
+
+check(vercel.outputDirectory === 'dist', 'Output Vercel isolato dalla root del repository');
+check(vercel.buildCommand === 'npm run build', 'Build Vercel esegue QA e pubblicazione whitelist');
 
 passes.forEach((message) => console.log(`PASS  ${message}`));
 
