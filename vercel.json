@@ -2,6 +2,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "buildCommand": "npm test",
+  "outputDirectory": ".",
   "headers": [
     {
       "source": "/(.*)",
