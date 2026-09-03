@@ -8,6 +8,8 @@ const agendaDate = document.getElementById('agenda-date');
 const editDialog = document.getElementById('edit-dialog');
 let catalog = { services: [], hours: [], location: {} };
 let appointments = [];
+let waitlistEntries = [];
+let inventoryProducts = [];
 
 function todayISO() {
   const now = new Date();
@@ -84,8 +86,8 @@ const statusLabels = {
   cancelled_by_customer: 'Annullato cliente', cancelled_by_shop: 'Annullato barberia', no_show: 'Non presentato'
 };
 const actions = {
-  pending: [['confirmed', 'Conferma', 'primary'], ['cancelled_by_shop', 'Annulla', '']],
-  confirmed: [['completed', 'Completa', 'primary'], ['no_show', 'No-show', ''], ['cancelled_by_shop', 'Annulla', '']]
+  pending: [['confirmed', 'Conferma', 'primary'], ['cancelled_by_customer', 'Annulla cliente', ''], ['cancelled_by_shop', 'Annulla barberia', '']],
+  confirmed: [['completed', 'Completa', 'primary'], ['cancelled_by_customer', 'Annulla cliente', ''], ['no_show', 'No-show', ''], ['cancelled_by_shop', 'Annulla barberia', '']]
 };
 
 function button(label, className, onClick) {
@@ -140,12 +142,27 @@ function appointmentCard(item) {
     notes.textContent = item.notes;
     article.appendChild(notes);
   }
+  const strikes = Number(customer.late_cancellations || 0) + Number(customer.no_show_count || 0);
+  if (strikes || customer.deposit_required || item.deposit_required) {
+    const risk = document.createElement('p');
+    risk.className = 'customer-risk';
+    const depositLabels = { pending: 'da pagare', paid: 'pagata', waived: 'non richiesta', refunded: 'rimborsata', not_required: 'non prevista' };
+    const deposit = customer.deposit_required || item.deposit_required
+      ? ` · Caparra ${depositLabels[item.deposit_status] || 'richiesta'}${item.deposit_amount_cents ? ` €${(item.deposit_amount_cents / 100).toFixed(2).replace('.', ',')}` : ''}`
+      : '';
+    risk.textContent = `Affidabilità: ${strikes} segnalazion${strikes === 1 ? 'e' : 'i'}${deposit}`;
+    article.appendChild(risk);
+  }
 
   const controls = document.createElement('div');
   controls.className = 'appointment-actions';
   (actions[item.status] || []).forEach(([status, label, className]) => {
     controls.appendChild(button(label, className, () => transition(item.id, status, label)));
   });
+  if (item.deposit_required && item.deposit_status === 'pending') {
+    controls.appendChild(button('Caparra pagata', 'primary', () => updateDeposit(item.id, 'paid')));
+    controls.appendChild(button('Esenta caparra', '', () => updateDeposit(item.id, 'waived')));
+  }
   if (['pending', 'confirmed'].includes(item.status)) {
     controls.appendChild(button('Sposta / note', '', () => openEdit(item)));
   }
@@ -185,6 +202,10 @@ async function loadMetrics() {
   document.getElementById('kpi-cancelled').textContent = String(metrics.cancelled || 0);
   document.getElementById('kpi-no-show').textContent = String(metrics.noShow || 0);
   document.getElementById('kpi-website').textContent = String(metrics.website || 0);
+  document.getElementById('kpi-revenue').textContent = `€${(Number(metrics.estimatedRevenueCents || 0) / 100).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  document.getElementById('kpi-waitlist').textContent = String(metrics.waitlist || 0);
+  document.getElementById('kpi-low-stock').textContent = String(metrics.lowStock || 0);
+  document.getElementById('kpi-risk').textContent = String(metrics.atRiskCustomers || 0);
 }
 
 function renderBlocks(items) {
@@ -253,6 +274,11 @@ function renderCatalog() {
   document.getElementById('setting-notice').value = catalog.location?.min_notice_minutes ?? 120;
   document.getElementById('setting-horizon').value = catalog.location?.booking_horizon_days ?? 45;
   document.getElementById('setting-interval').value = catalog.location?.slot_interval_minutes ?? 15;
+  document.getElementById('setting-review-url').value = catalog.location?.review_url || '';
+  document.getElementById('setting-strike-limit').value = catalog.location?.cancellation_strike_limit ?? 3;
+  document.getElementById('setting-deposit').value = ((catalog.location?.deposit_amount_cents || 0) / 100).toFixed(2);
+  document.getElementById('setting-deposit-url').value = catalog.location?.deposit_payment_url || '';
+  document.getElementById('setting-booking-enabled').checked = catalog.location?.public_booking_enabled === true;
   const picker = document.getElementById('new-services');
   picker.textContent = '';
   catalog.services.filter((item) => item.active).forEach((item) => {
@@ -278,7 +304,7 @@ async function loadCatalog() {
 async function loadAll() {
   agendaStatus.textContent = 'Sincronizzazione…';
   try {
-    await Promise.all([loadAgenda(), loadBlocks(), loadMetrics(), loadCatalog()]);
+    await Promise.all([loadAgenda(), loadBlocks(), loadMetrics(), loadCatalog(), loadWaitlist(), loadInventory()]);
   } catch (error) {
     agendaStatus.textContent = error.message;
   }
@@ -286,12 +312,152 @@ async function loadAll() {
 
 async function transition(appointmentId, status, label) {
   if (!confirm(`${label} questo appuntamento?`)) return;
+  let reason = '';
+  if (status === 'cancelled_by_customer') {
+    reason = confirm('La cancellazione è arrivata all’ultimo momento?\n\nOK = tardiva, Annulla = normale')
+      ? 'late_cancellation'
+      : 'customer_cancellation';
+  }
   agendaStatus.textContent = 'Aggiornamento…';
   try {
-    await api('/api/admin/appointments', { method: 'PATCH', body: JSON.stringify({ appointmentId, status }) });
-    await Promise.all([loadAgenda(), loadMetrics()]);
+    await api('/api/admin/appointments', { method: 'PATCH', body: JSON.stringify({ appointmentId, status, reason }) });
+    await Promise.all([loadAgenda(), loadMetrics(), loadWaitlist()]);
   } catch (error) {
     agendaStatus.textContent = error.message;
+  }
+}
+
+async function updateDeposit(appointmentId, depositStatus) {
+  if (!confirm(depositStatus === 'paid' ? 'Confermare che la caparra è stata pagata?' : 'Confermare che la caparra non è richiesta?')) return;
+  try {
+    await api('/api/admin/appointments', {
+      method: 'PATCH', body: JSON.stringify({ action: 'deposit', appointmentId, depositStatus })
+    });
+    await loadAgenda();
+  } catch (error) {
+    agendaStatus.textContent = error.message;
+  }
+}
+
+function waitlistCard(item) {
+  const article = document.createElement('article');
+  article.className = 'operation-card';
+  const customer = item.customers || {};
+  const preference = { morning: 'Mattina', afternoon: 'Pomeriggio', any: 'Qualsiasi orario' }[item.time_preference] || 'Qualsiasi orario';
+  const title = document.createElement('div');
+  title.innerHTML = '<strong></strong><span></span>';
+  title.querySelector('strong').textContent = customer.name || 'Cliente';
+  title.querySelector('span').textContent = `${item.reference || ''} · ${item.desired_date || ''} · ${preference}`;
+  const details = document.createElement('p');
+  details.textContent = (item.service_slugs || []).join(' · ');
+  const contacts = document.createElement('div');
+  contacts.className = 'appointment-contacts';
+  if (customer.phone_normalized) {
+    const phone = document.createElement('a');
+    phone.href = `tel:${customer.phone_normalized}`;
+    phone.textContent = customer.phone_normalized;
+    contacts.appendChild(phone);
+  }
+  const controls = document.createElement('div');
+  controls.className = 'appointment-actions';
+  if (item.status === 'waiting') controls.appendChild(button('Avvisa posto libero', 'primary', () => updateWaitlist(item.id, 'notified')));
+  if (['waiting', 'notified'].includes(item.status)) controls.appendChild(button('Segna prenotato', '', () => updateWaitlist(item.id, 'booked')));
+  if (['waiting', 'notified'].includes(item.status)) controls.appendChild(button('Rimuovi', '', () => updateWaitlist(item.id, 'cancelled')));
+  article.append(title, details, contacts, controls);
+  return article;
+}
+
+function renderWaitlist(items) {
+  const root = document.getElementById('waitlist-list');
+  root.textContent = '';
+  if (!items.length) {
+    root.innerHTML = '<p class="agenda-empty">Nessun cliente in attesa.</p>';
+    return;
+  }
+  items.forEach((item) => root.appendChild(waitlistCard(item)));
+}
+
+async function loadWaitlist() {
+  const data = await api('/api/admin/waitlist');
+  waitlistEntries = data.entries || [];
+  renderWaitlist(waitlistEntries);
+  document.getElementById('waitlist-status').textContent = `${waitlistEntries.length} richieste attive.`;
+}
+
+async function updateWaitlist(waitlistId, status) {
+  const copy = status === 'notified' ? 'Invio dell’avviso…' : 'Aggiornamento…';
+  document.getElementById('waitlist-status').textContent = copy;
+  try {
+    await api('/api/admin/waitlist', { method: 'PATCH', body: JSON.stringify({ waitlistId, status }) });
+    document.getElementById('waitlist-status').textContent = status === 'notified' ? 'Avviso messo in coda.' : 'Lista aggiornata.';
+    await loadWaitlist();
+  } catch (error) {
+    document.getElementById('waitlist-status').textContent = error.message;
+  }
+}
+
+function inventoryCard(item) {
+  const article = document.createElement('article');
+  const low = Number(item.stock_quantity) <= Number(item.low_stock_threshold);
+  article.className = `operation-card inventory-card${low ? ' is-low' : ''}`;
+  const top = document.createElement('div');
+  top.className = 'inventory-top';
+  const title = document.createElement('div');
+  title.innerHTML = '<strong></strong><span></span>';
+  title.querySelector('strong').textContent = item.name;
+  title.querySelector('span').textContent = item.sku || 'Nessun codice';
+  const quantity = document.createElement('div');
+  quantity.className = 'inventory-quantity';
+  quantity.innerHTML = `<strong>${Number(item.stock_quantity).toLocaleString('it-IT')}</strong><span>${item.unit || 'pz'}</span>`;
+  top.append(title, quantity);
+  const alert = document.createElement('p');
+  alert.className = low ? 'stock-alert' : 'stock-ok';
+  alert.textContent = low ? `Paolo, sta finendo: soglia ${Number(item.low_stock_threshold).toLocaleString('it-IT')} ${item.unit || 'pz'}.` : `Disponibilità sopra la soglia di ${Number(item.low_stock_threshold).toLocaleString('it-IT')} ${item.unit || 'pz'}.`;
+  const controls = document.createElement('div');
+  controls.className = 'appointment-actions';
+  controls.append(
+    button('Venduto', '', () => inventoryMovement(item, 'sale', -1)),
+    button('Utilizzato', '', () => inventoryMovement(item, 'use', -1)),
+    button('Carico', 'primary', () => inventoryMovement(item, 'restock', 1)),
+    button('Correggi', '', () => inventoryMovement(item, 'correction', 0))
+  );
+  article.append(top, alert, controls);
+  return article;
+}
+
+function renderInventory(items) {
+  const root = document.getElementById('inventory-list');
+  root.textContent = '';
+  if (!items.length) {
+    root.innerHTML = '<p class="agenda-empty">Aggiungi il primo prodotto da controllare.</p>';
+    return;
+  }
+  items.forEach((item) => root.appendChild(inventoryCard(item)));
+}
+
+async function loadInventory() {
+  const data = await api('/api/admin/inventory');
+  inventoryProducts = data.products || [];
+  renderInventory(inventoryProducts);
+  const low = inventoryProducts.filter((item) => Number(item.stock_quantity) <= Number(item.low_stock_threshold)).length;
+  document.getElementById('inventory-status').textContent = low ? `${low} prodott${low === 1 ? 'o' : 'i'} da riordinare.` : `${inventoryProducts.length} prodotti sotto controllo.`;
+}
+
+async function inventoryMovement(item, reason, suggested) {
+  const label = reason === 'restock' ? 'Quantità ricevuta' : reason === 'correction' ? 'Correzione (+ o -)' : 'Quantità';
+  const raw = prompt(`${label} per ${item.name}:`, String(Math.abs(suggested || 1)));
+  if (raw === null) return;
+  const amount = Number(String(raw).replace(',', '.'));
+  if (!Number.isFinite(amount) || amount === 0) {
+    document.getElementById('inventory-status').textContent = 'Inserisci una quantità valida.';
+    return;
+  }
+  const quantityDelta = reason === 'correction' ? amount : Math.abs(amount) * (suggested < 0 ? -1 : 1);
+  try {
+    await api('/api/admin/inventory', { method: 'POST', body: JSON.stringify({ action: 'movement', productId: item.id, quantityDelta, reason }) });
+    await loadInventory();
+  } catch (error) {
+    document.getElementById('inventory-status').textContent = error.message;
   }
 }
 
@@ -388,6 +554,31 @@ document.getElementById('block-form').addEventListener('submit', async (event) =
   }
 });
 
+document.getElementById('product-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const status = document.getElementById('inventory-status');
+  status.textContent = 'Aggiunta prodotto…';
+  try {
+    await api('/api/admin/inventory', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: document.getElementById('product-name').value,
+        sku: document.getElementById('product-sku').value,
+        unit: document.getElementById('product-unit').value,
+        lowStockThreshold: Number(String(document.getElementById('product-threshold').value).replace(',', '.')),
+        active: true
+      })
+    });
+    event.currentTarget.reset();
+    document.getElementById('product-unit').value = 'pz';
+    document.getElementById('product-threshold').value = '2';
+    status.textContent = 'Prodotto aggiunto. Ora registra il primo carico.';
+    await loadInventory();
+  } catch (error) {
+    status.textContent = error.message;
+  }
+});
+
 document.getElementById('save-notes').addEventListener('click', async () => {
   const status = document.getElementById('edit-status');
   status.textContent = 'Salvataggio note…';
@@ -451,7 +642,12 @@ document.getElementById('settings-form').addEventListener('submit', async (event
         location: {
           minNoticeMinutes: Number(document.getElementById('setting-notice').value),
           bookingHorizonDays: Number(document.getElementById('setting-horizon').value),
-          slotIntervalMinutes: Number(document.getElementById('setting-interval').value)
+          slotIntervalMinutes: Number(document.getElementById('setting-interval').value),
+          publicBookingEnabled: document.getElementById('setting-booking-enabled').checked,
+          reviewUrl: document.getElementById('setting-review-url').value,
+          cancellationStrikeLimit: Number(document.getElementById('setting-strike-limit').value),
+          depositAmountCents: Math.round(Number(document.getElementById('setting-deposit').value || 0) * 100),
+          depositPaymentUrl: document.getElementById('setting-deposit-url').value
         }
       })
     });
@@ -477,3 +673,7 @@ if (hashToken) {
 }
 setAuthenticated(Boolean(getToken()));
 if (getToken()) loadAll();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}

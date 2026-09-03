@@ -7,6 +7,8 @@
   <meta name="theme-color" content="#0c0c0c" />
   <title>Gestionale | La Barberia Sgarra</title>
   <link rel="icon" href="../assets/icons/favicon.ico" />
+  <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="../styles.css" />
   <link rel="stylesheet" href="admin.css" />
 </head>
@@ -45,6 +47,8 @@
       <nav class="admin-tabs" aria-label="Sezioni gestionale">
         <button type="button" class="is-active" data-admin-tab="agenda">Agenda</button>
         <button type="button" data-admin-tab="new">Nuovo</button>
+        <button type="button" data-admin-tab="waitlist">Attesa</button>
+        <button type="button" data-admin-tab="inventory">Giacenze</button>
         <button type="button" data-admin-tab="block">Blocca</button>
         <button type="button" data-admin-tab="settings">Configura</button>
       </nav>
@@ -61,6 +65,10 @@
           <article><span>Cancellati</span><strong id="kpi-cancelled">0</strong></article>
           <article><span>No-show</span><strong id="kpi-no-show">0</strong></article>
           <article><span>Da sito</span><strong id="kpi-website">0</strong></article>
+          <article><span>Valore agenda</span><strong id="kpi-revenue">€0</strong></article>
+          <article><span>In attesa</span><strong id="kpi-waitlist">0</strong></article>
+          <article><span>Da riordinare</span><strong id="kpi-low-stock">0</strong></article>
+          <article><span>Con caparra</span><strong id="kpi-risk">0</strong></article>
         </section>
         <p class="admin-status" id="agenda-status" role="status" aria-live="polite"></p>
         <div class="agenda-layout">
@@ -72,6 +80,35 @@
             <h2 class="admin-section-title">Blocchi agenda</h2>
             <div class="block-list" id="block-list"></div>
           </aside>
+        </div>
+      </section>
+
+      <section class="admin-view" data-admin-view="waitlist" hidden>
+        <div class="admin-card">
+          <p class="eyebrow">Riempi i posti liberi</p>
+          <h2>Lista d’attesa</h2>
+          <p class="admin-help">Le richieste sono ordinate per giorno e momento di inserimento. “Avvisa” prepara il messaggio automatico sul canale collegato.</p>
+          <p class="admin-status" id="waitlist-status" role="status" aria-live="polite"></p>
+          <div class="operations-list" id="waitlist-list"></div>
+        </div>
+      </section>
+
+      <section class="admin-view" data-admin-view="inventory" hidden>
+        <div class="admin-card">
+          <p class="eyebrow">Controllo prodotti</p>
+          <h2>Giacenze</h2>
+          <p class="admin-help">Quando vendi o utilizzi un prodotto, registralo qui. Sotto la soglia riceverai l’avviso di riordino.</p>
+          <form id="product-form" class="admin-form compact-form">
+            <div class="form-grid">
+              <label>Nome prodotto<input id="product-name" required minlength="2" /></label>
+              <label>Codice / SKU<input id="product-sku" maxlength="80" /></label>
+              <label>Unità<input id="product-unit" value="pz" maxlength="20" required /></label>
+              <label>Avvisami quando restano<input id="product-threshold" type="number" min="0" step="0.01" value="2" required /></label>
+            </div>
+            <button class="button button-primary" type="submit">Aggiungi prodotto</button>
+          </form>
+          <p class="admin-status" id="inventory-status" role="status" aria-live="polite"></p>
+          <div class="operations-list" id="inventory-list"></div>
         </div>
       </section>
 
@@ -140,6 +177,16 @@
                 <select id="setting-interval"><option>5</option><option>10</option><option selected>15</option><option>20</option><option>30</option><option>60</option></select>
               </label>
             </div>
+            <fieldset>
+              <legend>Automazioni e protezioni</legend>
+              <div class="form-grid">
+                <label>Link recensione Google<input id="setting-review-url" type="url" placeholder="https://g.page/r/.../review" /></label>
+                <label>Soglia cancellazioni / no-show<input id="setting-strike-limit" type="number" min="1" max="10" value="3" required /></label>
+                <label>Caparra €<input id="setting-deposit" type="number" min="0" max="1000" step="0.01" value="0" /></label>
+                <label>Link pagamento caparra<input id="setting-deposit-url" type="url" placeholder="https://..." /></label>
+              </div>
+              <label class="activation-check"><input id="setting-booking-enabled" type="checkbox" /> Attiva prenotazioni pubbliche soltanto dopo il collaudo</label>
+            </fieldset>
             <div class="settings-heading"><h3>Catalogo</h3><button type="button" class="mini-button" id="add-service">Aggiungi servizio</button></div>
             <div id="settings-services" class="settings-list"></div>
             <div class="settings-heading"><h3>Fasce orarie</h3><button type="button" class="mini-button" id="add-hour">Aggiungi fascia</button></div>

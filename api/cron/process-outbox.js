@@ -39,6 +39,10 @@ export default async function handler(request, response) {
   if (!authorized(request)) return sendJson(response, 401, { ok: false, error: { code: 'unauthorized', message: 'Non autorizzato.' } });
   let events;
   try {
+    const scheduled = await supabaseRequest('/rest/v1/rpc/enqueue_due_automations', {
+      method: 'POST', body: { p_now: new Date().toISOString() }
+    });
+    logInfo(context, 'scheduled_automations_enqueued', { scheduled });
     const params = new URLSearchParams({
       processed_at: 'is.null', available_at: 'lte.' + new Date().toISOString(),
       select: 'id,appointment_id,event_type,payload,attempts,idempotency_key',

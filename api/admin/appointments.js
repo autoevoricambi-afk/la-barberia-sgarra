@@ -30,7 +30,7 @@ async function listAppointments(request, response, context) {
   toDate.setUTCDate(toDate.getUTCDate() + 7);
   const to = validDate(request.query?.to) ? request.query.to : toDate.toISOString().slice(0, 10);
   const params = new URLSearchParams({
-    select: 'id,reference,status,starts_at,ends_at,notes,source,created_at,customers(name,phone_normalized),appointment_items(service_name_snapshot,service_id)',
+    select: 'id,reference,status,starts_at,ends_at,notes,source,created_at,deposit_required,deposit_amount_cents,deposit_status,late_cancellation,customers(name,phone_normalized,email,completed_visits,late_cancellations,no_show_count,deposit_required),appointment_items(service_name_snapshot,service_id)',
     starts_at: `gte.${from}T00:00:00+00:00`,
     order: 'starts_at.asc'
   });
@@ -144,6 +144,27 @@ async function transitionAppointment(body, admin, response, context) {
   }
 }
 
+async function updateDeposit(body, admin, response, context) {
+  const appointmentId = normalizeText(body?.appointmentId, 40);
+  const status = normalizeText(body?.depositStatus, 30);
+  if (!isValidUuid(appointmentId) || !['pending', 'paid', 'waived', 'refunded'].includes(status)) {
+    return sendJson(response, 400, { ok: false, error: { code: 'invalid_deposit', message: 'Stato caparra non valido.' } });
+  }
+  try {
+    const result = await supabaseRequest('/rest/v1/rpc/admin_set_deposit_status', {
+      method: 'POST', body: { p_appointment_id: appointmentId, p_status: status, p_actor_id: admin.id }
+    });
+    const appointment = Array.isArray(result) ? result[0] : result;
+    try { await processPendingOutboxForReference(appointment?.reference); }
+    catch (notificationError) { logError(context, 'deposit_notification_deferred', notificationError); }
+    logInfo(context, 'deposit_status_updated', { status });
+    return sendJson(response, 200, { ok: true, appointment });
+  } catch (error) {
+    logError(context, 'deposit_status_failed', error);
+    return sendJson(response, 502, { ok: false, error: { code: 'deposit_update_failed', message: 'Caparra non aggiornata.' } });
+  }
+}
+
 export default async function handler(request, response) {
   const context = requestContext(request, '/api/admin/appointments');
   if (!['GET', 'POST', 'PATCH'].includes(request.method)) return rejectMethod(response, ['GET', 'POST', 'PATCH']);
@@ -157,5 +178,6 @@ export default async function handler(request, response) {
   if (request.method === 'POST') return createAppointment(body, admin, response, context);
   if (body?.action === 'reschedule') return rescheduleAppointment(body, admin, response, context);
   if (body?.action === 'notes') return updateNotes(body, response, context);
+  if (body?.action === 'deposit') return updateDeposit(body, admin, response, context);
   return transitionAppointment(body, admin, response, context);
 }

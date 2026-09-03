@@ -37,7 +37,7 @@ export function getClientIp(request) {
 }
 
 export function publicError(error) {
-  if (error?.code === 'booking_not_configured') {
+  if (error?.code === 'booking_not_configured' || /booking_not_enabled/i.test(`${error?.message || ''} ${error?.details || ''}`)) {
     return { status: 503, code: error.code, message: 'Prenotazione online non ancora attiva.' };
   }
   if (error?.code === 'rate_limit_not_configured') {

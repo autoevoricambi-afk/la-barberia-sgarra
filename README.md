@@ -70,6 +70,9 @@ Il repository contiene una PWA unica con:
 - configurazione versionata di servizi, prezzi, durate e orari;
 - database clienti/appuntamenti con vincolo anti-sovrapposizione e buffer reali;
 - notifiche email/webhook con outbox e retry;
+- lista d'attesa collegata agli slot liberati;
+- giacenze con carico/scarico atomico e allerta sotto soglia;
+- promemoria, richiesta recensione e regola caparra per recidive;
 - KPI aggregati, log strutturati, rate limit e backup cifrato.
 
 Google Calendar e WhatsApp Business non vengono dichiarati attivi: l'outbox consente di

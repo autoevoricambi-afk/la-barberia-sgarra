@@ -79,12 +79,17 @@ const requiredFiles = [
   'admin/index.html',
   'admin/admin.css',
   'admin/admin.js',
+  'admin/manifest.webmanifest',
   'api/availability.js',
   'api/appointments.js',
+  'api/public-config.js',
+  'api/waitlist.js',
   'api/admin/auth.js',
   'api/admin/appointments.js',
   'api/admin/blocks.js',
   'api/admin/catalog.js',
+  'api/admin/inventory.js',
+  'api/admin/waitlist.js',
   'api/admin/metrics.js',
   'api/events.js',
   'api/cron/process-outbox.js',
@@ -97,6 +102,7 @@ const requiredFiles = [
   'supabase/migrations/202609010001_core_booking.sql',
   'supabase/migrations/202609010002_admin_workflow.sql',
   'supabase/migrations/202609020003_operational_pilot.sql',
+  'supabase/migrations/202609030004_complete_operations.sql',
   'docs/PAOLO_DISCOVERY.md',
   'docs/CONTROL_ROOM.md',
   'docs/BASELINE_2026-09-01.md',
@@ -117,6 +123,7 @@ const adminHtml = read('admin/index.html');
 const configJs = read('config.js');
 const robotsTxt = read('robots.txt');
 const sitemapXml = read('sitemap.xml');
+const devServer = read('tools/dev-server.mjs');
 
 checkDuplicateIds('index.html', indexHtml);
 checkDuplicateIds('privacy.html', privacyHtml);
@@ -141,7 +148,7 @@ check(!indexHtml.includes('fonts.googleapis.com') && !indexHtml.includes('fonts.
 check(/launchReady:\s*false/.test(configJs), 'Staging protetto da launchReady=false');
 check(/mode:\s*'request'/.test(configJs), 'Booking reale disattivato finché catalogo e orari non sono approvati');
 check(/serviceCatalogReady:\s*false/.test(configJs), 'Catalogo booking protetto da feature gate');
-check(/pwaEnabled:\s*false/.test(configJs), 'Service worker disattivato durante lo staging');
+check(/pwaEnabled:\s*true/.test(configJs), 'Web app installabile nel pilot');
 check(/siteUrl:\s*'https:\/\/la-barberia-sgarra\.vercel\.app'/.test(configJs), 'URL tecnico centralizzato');
 check(/Disallow:\s*\//.test(robotsTxt), 'robots.txt blocca lo staging');
 check(/<meta name="robots" content="noindex, nofollow" id="robots-meta"/.test(indexHtml), 'Meta robots staging presente');
@@ -160,13 +167,18 @@ const headerKeys = new Set((vercel.headers || []).flatMap((rule) => (rule.header
 });
 
 check(/id="customer-phone"/.test(indexHtml), 'Wizard raccoglie il recapito necessario alla conferma');
-check(/Nome, telefono, servizio/i.test(privacyHtml), 'Privacy coerente con i campi effettivi del wizard');
+check(/nome, telefono, email facoltativa, servizio/i.test(privacyHtml), 'Privacy coerente con i campi effettivi del wizard');
 check(privacyHtml.includes('Partita IVA 08703770720'), 'Titolare e Partita IVA presenti nella privacy');
 check(privacyHtml.includes('index.html#dove-siamo'), 'Link contatti privacy valido');
 check(/<meta name="robots" content="noindex, nofollow"/.test(adminHtml), 'Gestionale escluso dai motori di ricerca');
 check(adminHtml.includes('id="new-appointment-form"'), 'Gestionale crea appuntamenti manuali');
 check(adminHtml.includes('id="block-form"'), 'Gestionale crea pause e chiusure');
 check(adminHtml.includes('id="settings-form"'), 'Gestionale configura servizi e orari');
+check(adminHtml.includes('id="product-form"'), 'Gestionale controlla le giacenze');
+check(adminHtml.includes('id="waitlist-list"'), 'Gestionale controlla la lista d’attesa');
+check(indexHtml.includes('id="waitlist-box"'), 'Sito offre la lista d’attesa quando gli slot sono esauriti');
+check(devServer.includes("'/api/public-config'") && devServer.includes("'/api/waitlist'") && devServer.includes("'/api/admin/inventory'") && devServer.includes("'/api/admin/waitlist'"), 'Server locale espone tutte le nuove API');
+check(indexHtml.includes('id="customer-email"'), 'Booking raccoglie email facoltativa per le notifiche');
 
 const coreMigration = read('supabase/migrations/202609010001_core_booking.sql');
 check(coreMigration.includes('appointments_no_active_overlap'), 'Database impedisce sovrapposizioni attive');
@@ -184,8 +196,23 @@ check(operationalMigration.includes('admin_replace_booking_settings'), 'Configur
 check(operationalMigration.includes('service_conflicts'), 'Combinazioni servizio incompatibili protette');
 check(Array.isArray(vercel.crons) && vercel.crons.some((item) => item.path === '/api/cron/process-outbox'), 'Cron recupero notifiche configurato');
 
+const completeMigration = read('supabase/migrations/202609030004_complete_operations.sql');
+check(completeMigration.includes('create table if not exists public.products'), 'Magazzino persistente nel database');
+check(completeMigration.includes('admin_record_inventory_movement'), 'Movimenti giacenza atomici');
+check(completeMigration.includes('inventory.low_stock'), 'Allerta automatica sotto soglia');
+check(completeMigration.includes('create table if not exists public.waitlist_entries'), 'Lista d’attesa persistente');
+check(completeMigration.includes('waitlist.slot_available'), 'Posto liberato collega la lista d’attesa');
+check(completeMigration.includes('late_cancellations'), 'Cancellazioni tardive tracciate');
+check(completeMigration.includes('deposit_required'), 'Caparra collegata al profilo di rischio');
+check(completeMigration.includes('admin_set_deposit_status'), 'Stato caparra gestibile dal gestionale');
+check(completeMigration.includes('booking.reminder_day_before'), 'Promemoria del giorno prima pianificato');
+check(completeMigration.includes('booking.reminder_same_day'), 'Promemoria del giorno stesso pianificato');
+check(completeMigration.includes('review.request'), 'Richiesta recensione automatica pianificata');
+check(completeMigration.includes('estimatedRevenueCents'), 'Valore economico agenda disponibile nei KPI');
+check(completeMigration.includes('public_booking_enabled'), 'Attivazione booking protetta nel database');
+
 const envTemplate = read('.env.example');
-['RATE_LIMIT_SALT', 'CRON_SECRET', 'BACKUP_ENCRYPTION_KEY'].forEach((key) => {
+['RATE_LIMIT_SALT', 'CRON_SECRET', 'BACKUP_ENCRYPTION_KEY', 'BOOKING_NOTIFICATION_WEBHOOK_SECRET'].forEach((key) => {
   check(envTemplate.includes(`${key}=`), `Variabile operativa documentata: ${key}`);
 });
 

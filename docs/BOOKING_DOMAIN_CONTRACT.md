@@ -54,6 +54,8 @@ Dati minimi MVP:
 - storico appuntamenti;
 - consensi separati e versionati;
 - note operative limitate a ciò che serve per il servizio.
+- contatori separati per no-show e cancellazioni tardive;
+- richiesta caparra solo dopo la soglia approvata da Paolo.
 
 Marketing, preferenze tecniche e note interne non devono essere confuse con i dati necessari
 alla prenotazione.
@@ -76,3 +78,13 @@ alla prenotazione.
 
 Gli analytics non ricevono nome, telefono, note o contenuto dei messaggi.
 
+## Agenda, lista d'attesa e giacenze
+
+- ogni appuntamento, anche ricevuto per telefono, WhatsApp o di persona, entra nella stessa
+  agenda per non creare doppioni;
+- la lista d'attesa registra giorno, fascia e servizi desiderati; un posto liberato genera un
+  avviso tracciato, senza assegnare automaticamente lo slot a più persone;
+- ogni carico, vendita, utilizzo, scarto o correzione genera un movimento immutabile;
+- la quantità non può scendere sotto zero e il passaggio sotto soglia genera un avviso a Paolo;
+- promemoria e recensioni usano un'outbox con retry: un errore del provider non perde
+  l'appuntamento né il movimento operativo.

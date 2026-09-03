@@ -293,6 +293,20 @@
                 <p class="field-error" id="time-error" role="alert" hidden></p>
               </div>
             </div>
+            <div class="waitlist-box" id="waitlist-box" hidden>
+              <p class="eyebrow">Posto esaurito?</p>
+              <h3>Avvisami se si libera</h3>
+              <p>Lascia il recapito: il sistema ti avvisa quando si apre un posto compatibile con il servizio scelto.</p>
+              <div class="form-grid">
+                <div class="field"><label for="waitlist-name">Nome</label><input id="waitlist-name" autocomplete="name" /></div>
+                <div class="field"><label for="waitlist-phone">Telefono</label><input id="waitlist-phone" type="tel" autocomplete="tel" inputmode="tel" /></div>
+                <div class="field"><label for="waitlist-email">Email <span class="optional">facoltativa</span></label><input id="waitlist-email" type="email" autocomplete="email" /></div>
+                <div class="field"><label for="waitlist-time">Preferenza</label><select id="waitlist-time"><option value="any">Qualsiasi orario</option><option value="morning">Mattina</option><option value="afternoon">Pomeriggio</option></select></div>
+              </div>
+              <label class="consent"><input type="checkbox" id="waitlist-consent" /> <span>Accetto di essere contattato per questo posto libero e ho letto l’<a href="privacy.html" target="_blank" rel="noopener noreferrer">informativa privacy</a>.</span></label>
+              <button class="button button-secondary" type="button" id="waitlist-submit">Entra in lista d’attesa</button>
+              <p class="form-status" id="waitlist-status" role="status" aria-live="polite"></p>
+            </div>
             <div class="wizard-nav">
               <button type="button" class="button button-secondary wizard-back" data-back="1">Indietro</button>
               <button type="button" class="button button-primary wizard-next" data-next="3">Controlla la richiesta <span class="btn-arrow" aria-hidden="true">→</span></button>
@@ -312,6 +326,12 @@
               <input type="tel" id="customer-phone" name="customerPhone" autocomplete="tel" inputmode="tel" required aria-describedby="phone-error phone-hint" />
               <p class="field-hint" id="phone-hint">Serve solo per gestire e confermare l’appuntamento.</p>
               <p class="field-error" id="phone-error" role="alert" hidden></p>
+            </div>
+            <div class="field">
+              <label for="customer-email">Email <span class="optional">facoltativa</span></label>
+              <input type="email" id="customer-email" name="customerEmail" autocomplete="email" aria-describedby="email-error email-hint" />
+              <p class="field-hint" id="email-hint">Se la inserisci possiamo inviarti conferme, promemoria e richiesta recensione anche via email.</p>
+              <p class="field-error" id="email-error" role="alert" hidden></p>
             </div>
             <div class="field">
               <label for="booking-notes">Note</label>
@@ -402,6 +422,7 @@
       <div class="container final-cta-inner">
         <h2 id="final-title">Il prossimo taglio comincia qui.</h2>
         <a class="button button-primary button-lg" href="#prenota" data-track="booking_start">Prenota ora <span class="btn-arrow" aria-hidden="true">→</span></a>
+        <button class="button button-secondary" type="button" id="install-app" hidden>Installa La Barberia Sgarra</button>
       </div>
     </section>
   </main>

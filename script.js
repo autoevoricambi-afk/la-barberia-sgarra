@@ -6,6 +6,8 @@
 (function initApp() {
   document.documentElement.classList.add('js');
   var config = window.SITE_CONFIG || {};
+  var runtimeBooking = Object.assign({}, config.booking || {});
+  var runtimeServices = config.services || { primary: [], secondary: [] };
   var WHATSAPP = String(config.whatsappNumber || '393296410828');
   var currentStep = 1;
   var bookingRequestKey = createBookingRequestKey();
@@ -42,6 +44,7 @@
   initLocationSection();
   initPaoloBio();
   initPwa();
+  loadPublicConfiguration();
 
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -72,13 +75,38 @@
   }
 
   function liveBookingEnabled() {
-    var booking = config.booking || {};
+    var booking = runtimeBooking;
     return booking.mode === 'live' && booking.serviceCatalogReady === true;
   }
 
   function bookingApi(path) {
-    var base = String((config.booking && config.booking.apiBase) || '/api').replace(/\/$/, '');
+    var base = String(runtimeBooking.apiBase || '/api').replace(/\/$/, '');
     return base + path;
+  }
+
+  async function loadPublicConfiguration() {
+    try {
+      var response = await fetch(bookingApi('/public-config'), { headers: { Accept: 'application/json' } });
+      var payload = await response.json().catch(function () { return {}; });
+      if (!response.ok || payload.configured !== true || !Array.isArray(payload.services) || !payload.services.length) return;
+      var services = payload.services.map(function (item) {
+        var details = [];
+        if (item.description) details.push(item.description);
+        if (Number(item.durationMinutes) > 0) details.push(Number(item.durationMinutes) + ' min');
+        if (item.priceCents != null) details.push('€' + (Number(item.priceCents) / 100).toFixed(2).replace('.', ','));
+        return { id: item.id, label: item.label, desc: details.join(' · ') };
+      });
+      runtimeServices = { primary: services.slice(0, 5), secondary: services.slice(5) };
+      runtimeBooking.bookingHorizonDays = Number(payload.bookingHorizonDays || runtimeBooking.bookingHorizonDays || 45);
+      runtimeBooking.mode = payload.bookingEnabled === true ? 'live' : 'request';
+      runtimeBooking.serviceCatalogReady = payload.bookingEnabled === true;
+      renderServices();
+      syncBookingDateLimits();
+      updateServiceUI();
+      configureBookingMode();
+    } catch (error) {
+      if (config.debug && window.console) console.warn('Configurazione booking non raggiungibile.', error);
+    }
   }
 
   function formatDateIT(iso) {
@@ -343,7 +371,7 @@
   function renderServices() {
     var primary = document.getElementById('service-grid');
     var secondary = document.getElementById('service-grid-secondary');
-    var svc = config.services || {};
+    var svc = runtimeServices || {};
     if (primary) fillServiceGrid(primary, svc.primary || []);
     if (secondary) fillServiceGrid(secondary, svc.secondary || []);
   }
@@ -520,7 +548,7 @@
     } catch (e2) { /* no-op */ }
     try {
       var consent = localStorage.getItem('sgarra_tracking_consent');
-      var allowed = ['service_view', 'booking_start', 'slot_view', 'slot_selected', 'booking_confirmed', 'booking_cancelled', 'appointment_completed', 'no_show', 'review_requested', 'review_clicked', 'rebooking_confirmed'];
+      var allowed = ['service_view', 'booking_start', 'slot_view', 'slot_selected', 'booking_confirmed', 'booking_cancelled', 'appointment_completed', 'no_show', 'review_requested', 'review_clicked', 'rebooking_confirmed', 'waitlist_joined'];
       if (config.firstPartyAnalyticsEnabled === true && consent === 'accepted' && allowed.indexOf(eventName) !== -1) {
         fetch('/api/events', {
           method: 'POST',
@@ -976,15 +1004,21 @@
     try { dateInput.click(); } catch (e2) { /* noop */ }
   }
 
+  function syncBookingDateLimits() {
+    var dateInput = document.getElementById('booking-date');
+    if (!dateInput) return;
+    dateInput.min = todayISO();
+    var horizon = Number(runtimeBooking.bookingHorizonDays || 45);
+    var maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + Math.max(1, Math.min(horizon, 365)));
+    dateInput.max = maxDate.getFullYear() + '-' + String(maxDate.getMonth() + 1).padStart(2, '0') + '-' + String(maxDate.getDate()).padStart(2, '0');
+  }
+
   function initDateControl() {
     var dateInput = document.getElementById('booking-date');
     var control = document.getElementById('date-control');
     if (!dateInput) return;
-    dateInput.min = todayISO();
-    var horizon = Number((config.booking && config.booking.bookingHorizonDays) || 45);
-    var maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() + Math.max(1, Math.min(horizon, 365)));
-    dateInput.max = maxDate.getFullYear() + '-' + String(maxDate.getMonth() + 1).padStart(2, '0') + '-' + String(maxDate.getDate()).padStart(2, '0');
+    syncBookingDateLimits();
     dateInput.value = '';
     syncDateDisplay();
     dateInput.addEventListener('input', syncDateDisplay);
@@ -1014,6 +1048,16 @@
     if (hint) hint.textContent = message || 'Scegli giorno e servizio.';
   }
 
+  function showWaitlist(show) {
+    var box = document.getElementById('waitlist-box');
+    if (!box) return;
+    box.hidden = !show;
+    if (!show) {
+      var status = document.getElementById('waitlist-status');
+      if (status) status.textContent = '';
+    }
+  }
+
   async function loadAvailability() {
     if (!liveBookingEnabled()) return;
     var dateInput = document.getElementById('booking-date');
@@ -1023,12 +1067,14 @@
     var date = normalizeWhitespace(dateInput && dateInput.value);
     if (!date || !serviceIds.length || !select) {
       resetAvailability(!serviceIds.length ? 'Seleziona prima almeno un servizio.' : 'Scegli prima il giorno.');
+      showWaitlist(false);
       return;
     }
 
     resetAvailability('Controllo degli orari disponibili…');
+    showWaitlist(false);
     try {
-      var booking = config.booking || {};
+      var booking = runtimeBooking;
       var query = new URLSearchParams({
         date: date,
         staffSlug: booking.staffSlug || 'paolo-sgarra',
@@ -1052,10 +1098,12 @@
         select.appendChild(option);
       });
       select.disabled = slots.length === 0;
-      if (hint) hint.textContent = slots.length ? slots.length + ' orari realmente disponibili.' : 'Prova un altro giorno oppure scrivi a Paolo.';
+      if (hint) hint.textContent = slots.length ? slots.length + ' orari realmente disponibili.' : 'Prova un altro giorno oppure entra in lista d’attesa.';
+      showWaitlist(slots.length === 0);
       trackEvent('slot_view', { date: date, slots_count: slots.length });
     } catch (error) {
       resetAvailability(error.message || 'Disponibilità non raggiungibile.');
+      showWaitlist(false);
     }
   }
 
@@ -1063,7 +1111,7 @@
     var live = liveBookingEnabled();
     var lead = document.getElementById('booking-lead');
     var submit = document.getElementById('booking-submit');
-    var consentCopy = document.querySelector('.consent span');
+    var consentCopy = document.querySelector('#booking-consent + span');
     var faqConfirmation = document.getElementById('faq-confirmation-answer');
     if (!live) return;
     if (lead) lead.textContent = 'Scegli uno degli orari realmente disponibili. La richiesta viene registrata e Paolo la conferma.';
@@ -1077,6 +1125,7 @@
     if (!form) return;
     configureBookingMode();
     initDateControl();
+    initWaitlist();
 
     if (location.hash === '#prenota') {
       openBooking({ source: 'hash_load', skipTrack: true, instant: true });
@@ -1141,12 +1190,13 @@
             headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
             body: JSON.stringify({
               serviceIds: data.serviceIds,
-              staffSlug: (config.booking && config.booking.staffSlug) || 'paolo-sgarra',
+              staffSlug: runtimeBooking.staffSlug || 'paolo-sgarra',
               startsAt: data.time,
               name: data.name,
               phone: data.phone,
+              email: data.email,
               notes: data.notes,
-              privacyVersion: (config.booking && config.booking.privacyVersion) || '2026-09-01',
+              privacyVersion: runtimeBooking.privacyVersion || '2026-09-01',
               idempotencyKey: bookingRequestKey,
               website: data.website
             })
@@ -1156,7 +1206,10 @@
           var success = document.getElementById('booking-success');
           var copy = document.getElementById('booking-success-copy');
           if (copy) {
-            copy.textContent = 'Riferimento ' + (payload.booking && payload.booking.reference ? payload.booking.reference : 'registrato') + '. Riceverai la conferma usando il recapito indicato.';
+            var depositCopy = payload.booking && payload.booking.depositRequired
+              ? ' Per questa prenotazione Paolo ti invierà le istruzioni per la caparra.'
+              : '';
+            copy.textContent = 'Riferimento ' + (payload.booking && payload.booking.reference ? payload.booking.reference : 'registrato') + '. Riceverai la conferma usando il recapito indicato.' + depositCopy;
           }
           form.hidden = true;
           if (success) success.hidden = false;
@@ -1285,9 +1338,11 @@
     clearErrors();
     var nameEl = document.getElementById('customer-name');
     var phoneEl = document.getElementById('customer-phone');
+    var emailEl = document.getElementById('customer-email');
     var consentEl = document.getElementById('booking-consent');
     var name = normalizeWhitespace(nameEl && nameEl.value);
     var phone = normalizeWhitespace(phoneEl && phoneEl.value).replace(/[^0-9+]/g, '');
+    var email = normalizeWhitespace(emailEl && emailEl.value);
     if (!name) {
       showFieldError('name-error', 'Inserisci il tuo nome.');
       showErrorSummary('Controlla il campo evidenziato.');
@@ -1298,6 +1353,12 @@
       showFieldError('phone-error', 'Inserisci un numero di telefono valido.');
       showErrorSummary('Controlla il campo evidenziato.');
       if (phoneEl) { phoneEl.setAttribute('aria-invalid', 'true'); phoneEl.focus(); }
+      return false;
+    }
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+      showFieldError('email-error', 'Inserisci un indirizzo email valido.');
+      showErrorSummary('Controlla il campo evidenziato.');
+      if (emailEl) { emailEl.setAttribute('aria-invalid', 'true'); emailEl.focus(); }
       return false;
     }
     if (!consentEl || !consentEl.checked) {
@@ -1315,6 +1376,7 @@
       serviceIds: getSelectedServiceIds(),
       name: normalizeWhitespace(document.getElementById('customer-name') && document.getElementById('customer-name').value),
       phone: normalizeWhitespace(document.getElementById('customer-phone') && document.getElementById('customer-phone').value),
+      email: normalizeWhitespace(document.getElementById('customer-email') && document.getElementById('customer-email').value),
       date: normalizeWhitespace(document.getElementById('booking-date') && document.getElementById('booking-date').value),
       time: normalizeWhitespace(document.getElementById('booking-time') && document.getElementById('booking-time').value),
       notes: normalizeWhitespace(document.getElementById('booking-notes') && document.getElementById('booking-notes').value),
@@ -1330,9 +1392,12 @@
       '<strong>Riepilogo</strong><br>' +
       'Servizi: ' + escapeHtml(data.services.join(', ') || '—') + '<br>' +
       'Giorno: ' + escapeHtml(formatDateIT(data.date) || '—') + '<br>' +
-      'Orario: ' + escapeHtml(data.time || '—') +
+      'Orario: ' + escapeHtml(liveBookingEnabled() && data.time
+        ? new Date(data.time).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+        : (data.time || '—')) +
       (data.name ? '<br>Nome: ' + escapeHtml(data.name) : '') +
       (data.phone ? '<br>Telefono: ' + escapeHtml(data.phone) : '') +
+      (data.email ? '<br>Email: ' + escapeHtml(data.email) : '') +
       (data.notes ? '<br>Note: ' + escapeHtml(data.notes) : '');
   }
 
@@ -1349,6 +1414,52 @@
     if (data.notes) lines.push('Note: ' + data.notes);
     lines.push('', 'Attendo la tua conferma, grazie.');
     return lines.join('\n');
+  }
+
+  function initWaitlist() {
+    var submit = document.getElementById('waitlist-submit');
+    if (!submit) return;
+    submit.addEventListener('click', async function () {
+      var name = normalizeWhitespace(document.getElementById('waitlist-name') && document.getElementById('waitlist-name').value);
+      var phone = normalizeWhitespace(document.getElementById('waitlist-phone') && document.getElementById('waitlist-phone').value);
+      var email = normalizeWhitespace(document.getElementById('waitlist-email') && document.getElementById('waitlist-email').value);
+      var consent = document.getElementById('waitlist-consent');
+      var status = document.getElementById('waitlist-status');
+      var date = normalizeWhitespace(document.getElementById('booking-date') && document.getElementById('booking-date').value);
+      if (name.length < 2 || !/^(?:\+|00)?[0-9\s-]{8,20}$/.test(phone) || (email && !/^\S+@\S+\.\S+$/.test(email)) || !consent || !consent.checked) {
+        if (status) status.textContent = 'Inserisci nome, telefono valido e accetta l’informativa.';
+        return;
+      }
+      submit.disabled = true;
+      if (status) status.textContent = 'Inserimento nella lista…';
+      try {
+        var response = await fetch(bookingApi('/waitlist'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            serviceIds: getSelectedServiceIds(),
+            staffSlug: runtimeBooking.staffSlug || 'paolo-sgarra',
+            desiredDate: date,
+            timePreference: document.getElementById('waitlist-time').value,
+            name: name,
+            phone: phone,
+            email: email,
+            notes: '',
+            privacyVersion: runtimeBooking.privacyVersion || '2026-09-01',
+            idempotencyKey: createBookingRequestKey().replace(/^booking_/, 'waitlist_'),
+            website: normalizeWhitespace(document.getElementById('booking-website') && document.getElementById('booking-website').value)
+          })
+        });
+        var payload = await response.json().catch(function () { return {}; });
+        if (!response.ok) throw new Error((payload.error && payload.error.message) || 'Iscrizione non riuscita.');
+        if (status) status.textContent = 'Sei in lista. Riferimento ' + (payload.waitlist && payload.waitlist.reference ? payload.waitlist.reference : 'registrato') + '.';
+        submit.textContent = 'Inserito in lista';
+        trackEvent('waitlist_joined', { services_count: getSelectedServiceIds().length });
+      } catch (error) {
+        if (status) status.textContent = error.message || 'Iscrizione non riuscita.';
+        submit.disabled = false;
+      }
+    });
   }
 
   function setStatus(text) {
@@ -1470,10 +1581,37 @@
 
   function initPwa() {
     if (config.pwaEnabled !== true || !('serviceWorker' in navigator)) return;
+    var installPrompt = null;
+    var installButton = document.getElementById('install-app');
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/sw.js').catch(function () {
         if (config.debug && window.console) console.warn('Service worker non registrato.');
       });
     });
+    window.addEventListener('beforeinstallprompt', function (event) {
+      event.preventDefault();
+      installPrompt = event;
+      if (installButton) installButton.hidden = false;
+    });
+    window.addEventListener('appinstalled', function () {
+      installPrompt = null;
+      if (installButton) installButton.hidden = true;
+      trackEvent('pwa_installed', {});
+    });
+    if (installButton) {
+      var ios = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+      var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+      if (ios && !standalone) installButton.hidden = false;
+      installButton.addEventListener('click', async function () {
+        if (installPrompt) {
+          installPrompt.prompt();
+          await installPrompt.userChoice;
+          installPrompt = null;
+          installButton.hidden = true;
+          return;
+        }
+        alert('Su iPhone o iPad: tocca Condividi e poi “Aggiungi alla schermata Home”.');
+      });
+    }
   }
 })();

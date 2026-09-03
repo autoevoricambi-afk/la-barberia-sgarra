@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sgarra-static-v1';
+const CACHE_VERSION = 'sgarra-static-v2';
 const STATIC_CORE = [
   '/',
   '/index.html',

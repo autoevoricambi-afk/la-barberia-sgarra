@@ -4,12 +4,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import appointments from '../api/appointments.js';
 import availability from '../api/availability.js';
+import publicConfig from '../api/public-config.js';
+import waitlist from '../api/waitlist.js';
 import events from '../api/events.js';
 import health from '../api/health.js';
 import adminAuth from '../api/admin/auth.js';
 import adminAppointments from '../api/admin/appointments.js';
 import adminBlocks from '../api/admin/blocks.js';
 import adminCatalog from '../api/admin/catalog.js';
+import adminInventory from '../api/admin/inventory.js';
+import adminWaitlist from '../api/admin/waitlist.js';
 import adminMetrics from '../api/admin/metrics.js';
 import processOutbox from '../api/cron/process-outbox.js';
 
@@ -17,13 +21,17 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const port = Number(process.env.SGARRA_DEV_PORT || 8080);
 const apiRoutes = new Map([
   ['/api/health', health],
+  ['/api/public-config', publicConfig],
   ['/api/availability', availability],
   ['/api/appointments', appointments],
+  ['/api/waitlist', waitlist],
   ['/api/events', events],
   ['/api/admin/auth', adminAuth],
   ['/api/admin/appointments', adminAppointments],
   ['/api/admin/blocks', adminBlocks],
   ['/api/admin/catalog', adminCatalog],
+  ['/api/admin/inventory', adminInventory],
+  ['/api/admin/waitlist', adminWaitlist],
   ['/api/admin/metrics', adminMetrics],
   ['/api/cron/process-outbox', processOutbox]
 ]);

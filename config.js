@@ -27,7 +27,7 @@ window.SITE_CONFIG = Object.freeze({
     privacyVersion: '2026-09-01',
     bookingHorizonDays: 45
   },
-  pwaEnabled: false,
+  pwaEnabled: true,
 
   whatsappNumber: '393296410828',
   phoneDisplay: '+39 329 641 0828',

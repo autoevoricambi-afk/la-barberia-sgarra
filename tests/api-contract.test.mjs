@@ -74,8 +74,13 @@ test('availability configurata attraversa rate limit e database', async () => {
   const calls = [];
   global.fetch = async (url) => {
     calls.push(String(url));
-    const rate = String(url).includes('consume_public_rate_limit');
-    return new Response(JSON.stringify(rate ? true : [{ starts_at: '2026-09-05T08:00:00Z', ends_at: '2026-09-05T08:30:00Z', label: '10:00' }]), {
+    const target = String(url);
+    const payload = target.includes('public_booking_configuration')
+      ? { configured: true, bookingEnabled: true, services: [{ id: 'taglio-uomo' }] }
+      : target.includes('consume_public_rate_limit')
+        ? true
+        : [{ starts_at: '2026-09-05T08:00:00Z', ends_at: '2026-09-05T08:30:00Z', label: '10:00' }];
+    return new Response(JSON.stringify(payload), {
       status: 200, headers: { 'Content-Type': 'application/json' }
     });
   };
@@ -88,7 +93,7 @@ test('availability configurata attraversa rate limit e database', async () => {
     }, response);
     assert.equal(response.statusCode, 200);
     assert.equal(response.payload.slots.length, 1);
-    assert.equal(calls.length, 2);
+    assert.equal(calls.length, 3);
   } finally {
     if (previous.url === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = previous.url;
     if (previous.key === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = previous.key;
@@ -129,7 +134,8 @@ test('booking configurato salva e restituisce un riferimento senza esporre dati'
     }, response);
     assert.equal(response.statusCode, 201);
     assert.deepEqual(response.payload.booking, {
-      reference: 'SG-TEST-1', status: 'pending', startsAt: '2026-09-05T08:00:00Z'
+      reference: 'SG-TEST-1', status: 'pending', startsAt: '2026-09-05T08:00:00Z',
+      depositRequired: false, depositAmountCents: 0, depositStatus: 'not_required'
     });
     assert.equal(JSON.stringify(response.payload).includes('Mario'), false);
     assert.equal(JSON.stringify(response.payload).includes('329'), false);

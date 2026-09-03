@@ -23,6 +23,10 @@ Il flag `launchReady` può diventare `true` solo quando tutti i blocchi P0 sono 
 - [ ] Agenda mobile testata da Paolo.
 - [ ] WhatsApp/Calendar degradano senza perdere appuntamenti.
 - [ ] Stati e KPI registrati correttamente.
+- [ ] Lista d'attesa avvisa i clienti compatibili quando si libera uno slot.
+- [ ] Carico/scarico giacenza è atomico e l'allerta sotto soglia arriva a Paolo.
+- [ ] Promemoria giorno prima/giorno stesso e richiesta recensione sono consegnati.
+- [ ] No-show/cancellazione tardiva attivano la regola caparra solo alla soglia approvata.
 
 ## Qualità
 
@@ -38,6 +42,7 @@ Il flag `launchReady` può diventare `true` solo quando tutti i blocchi P0 sono 
 - [ ] Consenso marketing separato e documentato.
 - [ ] Retention, cancellazione ed export definiti.
 - [ ] Segreti solo lato server; rate limit e anti-spam attivi.
+- [ ] Accesso gestionale limitato all'email approvata da Paolo.
 - [ ] Cookie/tracker bloccati fino alla scelta quando necessario.
 
 ## Go-live
@@ -46,4 +51,3 @@ Il flag `launchReady` può diventare `true` solo quando tutti i blocchi P0 sono 
 - [ ] `launchReady: true` solo nel commit approvato.
 - [ ] Baseline “prima” archiviata.
 - [ ] Monitoraggio prime 72 ore assegnato.
-

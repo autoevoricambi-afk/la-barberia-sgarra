@@ -29,6 +29,8 @@ per sito, booking e gestionale. In caso di dubbio il dato resta non pubblicato.
 - Regole attuali per spostamento e cancellazione:
 - Il no-show è un problema? Quanti casi medi al mese?
 - Vuole deposito/carta a garanzia? Solo se necessario:
+- Dopo quanti no-show/cancellazioni tardive deve essere richiesta la caparra?
+- Importo caparra e link di pagamento, se usato:
 
 ## 3. Catalogo servizi
 
@@ -68,9 +70,20 @@ Compilare una riga per ogni servizio. Non creare combinazioni duplicate.
 - Dopo quanti giorni chiedere una recensione:
 - Dopo quanti giorni proporre un nuovo appuntamento:
 - Vuole una lista d’attesa per gli slot liberati?
+- Link diretto per lasciare una recensione Google:
+- Provider scelto per messaggi automatici: email / WhatsApp Business Platform / SMS:
 - Vuole promozioni? Solo con consenso marketing separato:
 
-## 6. Brand, foto e contenuti
+## 6. Giacenze iniziali
+
+Compilare una riga per ogni prodotto gestito. Non servono prodotti che Paolo non vuole
+controllare.
+
+| Prodotto | Codice facoltativo | Unità | Quantità iniziale | Avviso quando restano |
+|---|---|---|---:|---:|
+| | | pz | | 2 |
+
+## 7. Brand, foto e contenuti
 
 - Bio di Paolo approvata:
 - Claim approvato:
@@ -82,7 +95,7 @@ Compilare una riga per ogni servizio. Non creare combinazioni duplicate.
 - Tre clienti disponibili per prima/dopo con liberatoria:
 - Recensioni Google utilizzabili con fonte:
 
-## 7. Accordo Case Study 001
+## 8. Accordo Case Study 001
 
 - Autorizza utilizzo di schermate e risultati non sensibili nel portfolio?
 - Autorizza confronto prima/dopo per 90 giorni?
@@ -90,4 +103,3 @@ Compilare una riga per ogni servizio. Non creare combinazioni duplicate.
 - Costi vivi pagati dal titolare: dominio, messaggistica, eventuali SaaS e campagne.
 - Referente che approva dati e pubblicazione:
 - Data approvazione finale:
-

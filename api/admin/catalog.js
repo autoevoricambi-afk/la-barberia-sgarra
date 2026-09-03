@@ -24,7 +24,7 @@ export default async function handler(request, response) {
   if (request.method === 'GET') {
     try {
       const [locations, services, hours] = await Promise.all([
-        supabaseRequest('/rest/v1/locations?slug=eq.via-corato-48&select=min_notice_minutes,booking_horizon_days,slot_interval_minutes&limit=1'),
+        supabaseRequest('/rest/v1/locations?slug=eq.via-corato-48&select=min_notice_minutes,booking_horizon_days,slot_interval_minutes,public_booking_enabled,review_url,cancellation_strike_limit,deposit_amount_cents,deposit_payment_url&limit=1'),
         supabaseRequest('/rest/v1/services?select=slug,name,description,duration_minutes,buffer_before_minutes,buffer_after_minutes,price_cents,active,sort_order&order=sort_order.asc'),
         supabaseRequest('/rest/v1/business_hours?select=weekday,opens_at,closes_at,active&order=weekday.asc,opens_at.asc')
       ]);
@@ -63,7 +63,12 @@ export default async function handler(request, response) {
         p_location: {
           min_notice_minutes: validation.value.location.minNoticeMinutes,
           booking_horizon_days: validation.value.location.bookingHorizonDays,
-          slot_interval_minutes: validation.value.location.slotIntervalMinutes
+          slot_interval_minutes: validation.value.location.slotIntervalMinutes,
+          public_booking_enabled: validation.value.location.publicBookingEnabled,
+          review_url: validation.value.location.reviewUrl,
+          cancellation_strike_limit: validation.value.location.cancellationStrikeLimit,
+          deposit_amount_cents: validation.value.location.depositAmountCents,
+          deposit_payment_url: validation.value.location.depositPaymentUrl
         },
         p_actor_id: admin.id
       }

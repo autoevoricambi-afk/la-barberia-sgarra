@@ -6,7 +6,7 @@ import { supabaseRequest } from './_lib/supabase.js';
 const EVENTS = new Set([
   'service_view', 'booking_start', 'slot_view', 'slot_selected', 'booking_confirmed',
   'booking_cancelled', 'appointment_completed', 'no_show', 'review_requested',
-  'review_clicked', 'rebooking_confirmed'
+  'review_clicked', 'rebooking_confirmed', 'waitlist_joined'
 ]);
 const FORBIDDEN_KEY = /name|phone|note|email|message|customer|date|address|token/i;
 

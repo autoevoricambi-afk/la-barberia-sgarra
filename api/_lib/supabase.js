@@ -71,3 +71,17 @@ export async function verifySupabaseUser(accessToken) {
   if (!response.ok) return null;
   return response.json();
 }
+
+export async function getPublicBookingConfiguration() {
+  return supabaseRequest('/rest/v1/rpc/public_booking_configuration', { method: 'POST', body: {} });
+}
+
+export async function ensurePublicBookingEnabled() {
+  const configuration = await getPublicBookingConfiguration();
+  if (!configuration?.configured || configuration?.bookingEnabled !== true) {
+    const error = new Error('booking_not_enabled');
+    error.code = 'booking_not_configured';
+    throw error;
+  }
+  return configuration;
+}

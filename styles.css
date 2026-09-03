@@ -484,6 +484,11 @@ button { cursor: pointer; }
 .booking-success { padding: 1.25rem; border: 1px solid var(--brass); background: rgba(28, 51, 40, 0.45); }
 .booking-success h3 { margin: 0 0 0.55rem; font: 400 1.8rem/1.1 var(--font-display); }
 .booking-success p:not(.eyebrow) { color: var(--cream-soft); }
+.waitlist-box { margin: 1rem 0; padding: 1rem; border: 1px solid rgba(178, 138, 70, 0.5); background: rgba(20, 25, 21, 0.72); }
+.waitlist-box h3 { margin: 0.15rem 0 0.45rem; font: 400 clamp(1.8rem, 6vw, 2.5rem)/1 var(--font-display); }
+.waitlist-box > p:not(.eyebrow) { color: var(--cream-soft); }
+.waitlist-box .button { width: 100%; margin-top: 0.8rem; }
+.optional { color: var(--muted); font-size: 0.72rem; font-weight: 400; }
 
 /* Date control — testo visibile controllato; input nativo sotto */
 .date-control {

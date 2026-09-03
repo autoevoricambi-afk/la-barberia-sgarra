@@ -9,6 +9,10 @@ import {
   validateBlockPayload,
   validateBookingPayload,
   validateBookingSettingsPayload,
+  validateInventoryMovementPayload,
+  validateInventoryProductPayload,
+  validateWaitlistAdminPayload,
+  validateWaitlistPayload,
   validateReschedulePayload
 } from '../platform/booking-domain.mjs';
 
@@ -17,6 +21,24 @@ test('normalizza i numeri italiani senza alterare un prefisso internazionale', (
   assert.equal(normalizePhone('0039 329 641 0828'), '+393296410828');
   assert.equal(normalizePhone('+44 7700 900123'), '+447700900123');
   assert.equal(isValidPhone('+393296410828'), true);
+});
+
+test('valida lista d’attesa, prodotti e movimenti di giacenza', () => {
+  const waitlist = validateWaitlistPayload({
+    serviceIds: ['taglio-uomo'], desiredDate: '2026-09-10', timePreference: 'morning',
+    name: 'Mario Rossi', phone: '3290001122', email: 'mario@example.com',
+    privacyVersion: '2026-09-03', idempotencyKey: 'waitlist_1234567890abcdef', website: ''
+  });
+  assert.equal(waitlist.ok, true);
+  const product = validateInventoryProductPayload({ name: 'Cera opaca', unit: 'pz', lowStockThreshold: 2 });
+  assert.equal(product.ok, true);
+  const movement = validateInventoryMovementPayload({
+    productId: 'a3bb189e-8bf9-4db1-9fa4-55cb43fe1458', quantityDelta: -1, reason: 'sale'
+  });
+  assert.equal(movement.ok, true);
+  assert.equal(validateWaitlistAdminPayload({
+    waitlistId: 'a3bb189e-8bf9-4db1-9fa4-55cb43fe1458', status: 'notified'
+  }).ok, true);
 });
 
 test('rifiuta payload incompleti e honeypot compilato', () => {

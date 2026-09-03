@@ -22,6 +22,8 @@ const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ADMIN_SOURCES = new Set(['admin', 'phone', 'whatsapp', 'walk_in']);
 const BLOCK_KINDS = new Set(['manual', 'closure', 'break']);
+const INVENTORY_REASONS = new Set(['sale', 'use', 'restock', 'correction', 'waste']);
+const WAITLIST_STATUSES = new Set(['waiting', 'notified', 'booked', 'cancelled', 'expired']);
 
 export function normalizeText(value, maxLength = 200) {
   return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
@@ -74,6 +76,7 @@ export function validateBookingPayload(input) {
     startsAt: normalizeText(source.startsAt, 40),
     name: normalizeText(source.name, 80),
     phone: normalizePhone(source.phone),
+    email: normalizeText(source.email, 160).toLowerCase(),
     notes: normalizeText(source.notes, 500),
     privacyVersion: normalizeText(source.privacyVersion, 30),
     idempotencyKey: normalizeText(source.idempotencyKey, 80),
@@ -88,6 +91,7 @@ export function validateBookingPayload(input) {
   if (!isValidInstant(value.startsAt)) errors.startsAt = 'Orario non valido.';
   if (value.name.length < 2) errors.name = 'Inserisci un nome valido.';
   if (!isValidPhone(value.phone)) errors.phone = 'Inserisci un numero di telefono valido.';
+  if (value.email && !/^\S+@\S+\.\S+$/.test(value.email)) errors.email = 'Inserisci un indirizzo email valido.';
   if (!value.privacyVersion) errors.privacyVersion = 'Versione privacy mancante.';
   if (!/^[a-zA-Z0-9_-]{16,80}$/.test(value.idempotencyKey)) errors.idempotencyKey = 'Identificativo richiesta non valido.';
   if (value.website) errors.website = 'Richiesta non valida.';
@@ -193,7 +197,12 @@ export function validateBookingSettingsPayload(input) {
   const location = {
     minNoticeMinutes: Number(source.location?.minNoticeMinutes ?? 120),
     bookingHorizonDays: Number(source.location?.bookingHorizonDays ?? 45),
-    slotIntervalMinutes: Number(source.location?.slotIntervalMinutes ?? 15)
+    slotIntervalMinutes: Number(source.location?.slotIntervalMinutes ?? 15),
+    publicBookingEnabled: source.location?.publicBookingEnabled === true,
+    reviewUrl: normalizeText(source.location?.reviewUrl, 500),
+    cancellationStrikeLimit: Number(source.location?.cancellationStrikeLimit ?? 3),
+    depositAmountCents: Number(source.location?.depositAmountCents ?? 0),
+    depositPaymentUrl: normalizeText(source.location?.depositPaymentUrl, 500)
   };
   const errors = {};
   if (!services.length || services.length > 40) errors.services = 'Inserisci da uno a quaranta servizi.';
@@ -206,5 +215,87 @@ export function validateBookingSettingsPayload(input) {
   if (!Number.isInteger(location.minNoticeMinutes) || location.minNoticeMinutes < 0 || location.minNoticeMinutes > 10080) errors.location = 'Anticipo minimo non valido.';
   if (!Number.isInteger(location.bookingHorizonDays) || location.bookingHorizonDays < 1 || location.bookingHorizonDays > 365) errors.location = 'Orizzonte prenotazioni non valido.';
   if (![5, 10, 15, 20, 30, 60].includes(location.slotIntervalMinutes)) errors.location = 'Intervallo slot non valido.';
+  if (location.reviewUrl && !/^https:\/\//i.test(location.reviewUrl)) errors.location = 'Link recensioni non valido.';
+  if (!Number.isInteger(location.cancellationStrikeLimit) || location.cancellationStrikeLimit < 1 || location.cancellationStrikeLimit > 10) errors.location = 'Soglia cancellazioni non valida.';
+  if (!Number.isInteger(location.depositAmountCents) || location.depositAmountCents < 0 || location.depositAmountCents > 100000) errors.location = 'Importo caparra non valido.';
+  if (location.depositPaymentUrl && !/^https:\/\//i.test(location.depositPaymentUrl)) errors.location = 'Link caparra non valido.';
   return { ok: Object.keys(errors).length === 0, value: { services, hours, location }, errors };
+}
+
+export function validateWaitlistPayload(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const serviceIds = Array.isArray(source.serviceIds)
+    ? [...new Set(source.serviceIds.map((id) => normalizeText(id, 80)).filter(Boolean))]
+    : [];
+  const value = {
+    serviceIds,
+    staffSlug: normalizeText(source.staffSlug || 'paolo-sgarra', 80),
+    desiredDate: normalizeText(source.desiredDate, 10),
+    timePreference: normalizeText(source.timePreference || 'any', 20),
+    name: normalizeText(source.name, 80),
+    phone: normalizePhone(source.phone),
+    email: normalizeText(source.email, 160).toLowerCase(),
+    notes: normalizeText(source.notes, 300),
+    privacyVersion: normalizeText(source.privacyVersion, 30),
+    idempotencyKey: normalizeText(source.idempotencyKey, 80),
+    website: normalizeText(source.website, 200)
+  };
+  const errors = {};
+  if (!value.serviceIds.length || value.serviceIds.length > 4 || value.serviceIds.some((id) => !isValidBookingId(id))) errors.serviceIds = 'Servizi non validi.';
+  if (!isValidBookingId(value.staffSlug)) errors.staffSlug = 'Operatore non valido.';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value.desiredDate) || !Number.isFinite(Date.parse(`${value.desiredDate}T12:00:00Z`))) errors.desiredDate = 'Data non valida.';
+  if (!['morning', 'afternoon', 'any'].includes(value.timePreference)) errors.timePreference = 'Preferenza oraria non valida.';
+  if (value.name.length < 2) errors.name = 'Inserisci un nome valido.';
+  if (!isValidPhone(value.phone)) errors.phone = 'Inserisci un numero di telefono valido.';
+  if (value.email && !/^\S+@\S+\.\S+$/.test(value.email)) errors.email = 'Inserisci un indirizzo email valido.';
+  if (!value.privacyVersion) errors.privacyVersion = 'Versione privacy mancante.';
+  if (!/^[a-zA-Z0-9_-]{16,80}$/.test(value.idempotencyKey)) errors.idempotencyKey = 'Identificativo richiesta non valido.';
+  if (value.website) errors.website = 'Richiesta non valida.';
+  return { ok: Object.keys(errors).length === 0, value, errors };
+}
+
+export function validateInventoryProductPayload(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const value = {
+    productId: normalizeText(source.productId, 40),
+    sku: normalizeText(source.sku, 80),
+    name: normalizeText(source.name, 120),
+    unit: normalizeText(source.unit || 'pz', 20),
+    lowStockThreshold: Number(source.lowStockThreshold ?? 2),
+    active: source.active !== false
+  };
+  const errors = {};
+  if (value.productId && !isValidUuid(value.productId)) errors.productId = 'Prodotto non valido.';
+  if (value.name.length < 2) errors.name = 'Nome prodotto non valido.';
+  if (!/^[a-zA-Z0-9à-öø-ÿ._ -]{1,20}$/i.test(value.unit)) errors.unit = 'Unità non valida.';
+  if (!Number.isFinite(value.lowStockThreshold) || value.lowStockThreshold < 0 || value.lowStockThreshold > 100000) errors.lowStockThreshold = 'Soglia giacenza non valida.';
+  return { ok: Object.keys(errors).length === 0, value, errors };
+}
+
+export function validateInventoryMovementPayload(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const value = {
+    productId: normalizeText(source.productId, 40),
+    quantityDelta: Number(source.quantityDelta),
+    reason: normalizeText(source.reason, 30),
+    note: normalizeText(source.note, 200)
+  };
+  const errors = {};
+  if (!isValidUuid(value.productId)) errors.productId = 'Prodotto non valido.';
+  if (!Number.isFinite(value.quantityDelta) || value.quantityDelta === 0 || Math.abs(value.quantityDelta) > 100000) errors.quantityDelta = 'Quantità non valida.';
+  if (!INVENTORY_REASONS.has(value.reason)) errors.reason = 'Causale non valida.';
+  return { ok: Object.keys(errors).length === 0, value, errors };
+}
+
+export function validateWaitlistAdminPayload(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const value = {
+    waitlistId: normalizeText(source.waitlistId, 40),
+    status: normalizeText(source.status, 30),
+    note: normalizeText(source.note, 200)
+  };
+  const errors = {};
+  if (!isValidUuid(value.waitlistId)) errors.waitlistId = 'Richiesta non valida.';
+  if (!WAITLIST_STATUSES.has(value.status)) errors.status = 'Stato non valido.';
+  return { ok: Object.keys(errors).length === 0, value, errors };
 }

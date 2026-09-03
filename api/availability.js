@@ -2,7 +2,7 @@ import { validateAvailabilityQuery } from '../platform/booking-domain.mjs';
 import { publicError, rejectMethod, sendJson } from './_lib/http.js';
 import { logError, logInfo, requestContext } from './_lib/logging.js';
 import { consumeRateLimit } from './_lib/rate-limit.js';
-import { supabaseRequest } from './_lib/supabase.js';
+import { ensurePublicBookingEnabled, supabaseRequest } from './_lib/supabase.js';
 
 export default async function handler(request, response) {
   const context = requestContext(request, '/api/availability');
@@ -21,6 +21,7 @@ export default async function handler(request, response) {
   }
 
   try {
+    await ensurePublicBookingEnabled();
     if (!await consumeRateLimit(request, 'availability', 120, 900)) {
       logInfo(context, 'rate_limited');
       return sendJson(response, 429, { ok: false, error: { code: 'rate_limited', message: 'Troppe richieste. Riprova tra qualche minuto.' } }, { 'Retry-After': '900' });
