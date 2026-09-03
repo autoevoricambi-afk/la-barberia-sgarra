@@ -15,7 +15,11 @@ export default async function handler(request, response) {
       'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
     });
   } catch (error) {
-    logError(context, 'public_configuration_unavailable', error);
+    if (error?.code === 'booking_not_configured') {
+      logInfo(context, 'public_configuration_pending');
+    } else {
+      logError(context, 'public_configuration_unavailable', error);
+    }
     return sendJson(response, 200, {
       ok: true,
       configured: false,

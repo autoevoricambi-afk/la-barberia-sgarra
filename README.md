@@ -10,6 +10,7 @@ Repository di fondazione del sistema digitale Barberia Sgarra.
 - Sito storico pubblico rilevato in 404 il 1 settembre 2026
 - V4.2 conservata come base visiva
 - API booking, schema PostgreSQL/Supabase e gestionale mobile operativo protetti da feature gate
+- un solo router serverless per restare entro i limiti del piano Vercel Hobby
 - Modalità pubblica attuale: richiesta WhatsApp; nessun prezzo, durata o orario inventato
 
 ## Comandi

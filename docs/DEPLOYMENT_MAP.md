@@ -15,8 +15,13 @@ Aggiornata: 3 settembre 2026.
 
 | Progetto / URL | Stato verificato | Versione | Decisione |
 |---|---|---|---|
-| `https://la-barberia-sgarra.vercel.app/` | progetto canonico collegato; produzione non ancora promossa | production resta protetta fino al collaudo | deve diventare il dominio tecnico canonico dopo il pilot approvato |
+| `https://la-barberia-sgarra-git-case-stud-1793d1-ivans-projects-06740a94.vercel.app/` | `READY`, sito e `/admin/` verificati il 3 settembre | branch operativo, API accorpate in una sola funzione Hobby | preview canonico del pilot |
+| `https://la-barberia-sgarra.vercel.app/` | produzione non ancora promossa | production resta protetta fino al collaudo con dati reali | deve diventare il dominio tecnico canonico dopo il pilot approvato |
 | `https://la-barberia-sgarra-vqdz-git-rede-37e3c6-ivans-projects-06740a94.vercel.app/` | `200`, `x-robots-tag: noindex` | V4.2: hash di `config.js`, `script.js` e `styles.css` uguali a `redesign-premium-v2` | solo riferimento storico/preview; non sviluppare qui |
+
+Il deployment `dpl_3jXTHjx8fLTCCX1Y2KrUWzcegd4m` è fallito dopo una build verde perché il
+piano Hobby permette al massimo 12 funzioni. Il deployment successivo
+`dpl_8refp9WLf3QHKrPMfbJEEk9Tc4uV` risolve il limite con un solo router Node ed è `READY`.
 
 ## Regola anti-duplicazione
 
