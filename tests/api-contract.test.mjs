@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import appointmentsHandler from '../api/appointments.js';
-import availabilityHandler from '../api/availability.js';
-import healthHandler from '../api/health.js';
+import appointmentsHandler from '../api/_routes/appointments.js';
+import availabilityHandler from '../api/_routes/availability.js';
+import healthHandler from '../api/_routes/health.js';
 
 function responseRecorder() {
   return {

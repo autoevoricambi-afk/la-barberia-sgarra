@@ -1,9 +1,9 @@
-import { validateBookingPayload } from '../platform/booking-domain.mjs';
-import { getClientIp, publicError, readJsonBody, rejectMethod, sendJson } from './_lib/http.js';
-import { logError, logInfo, requestContext } from './_lib/logging.js';
-import { processPendingOutboxForReference } from './_lib/notifications.js';
-import { consumeRateLimit } from './_lib/rate-limit.js';
-import { supabaseRequest } from './_lib/supabase.js';
+import { validateBookingPayload } from '../../platform/booking-domain.mjs';
+import { getClientIp, publicError, readJsonBody, rejectMethod, sendJson } from '../_lib/http.js';
+import { logError, logInfo, requestContext } from '../_lib/logging.js';
+import { processPendingOutboxForReference } from '../_lib/notifications.js';
+import { consumeRateLimit } from '../_lib/rate-limit.js';
+import { supabaseRequest } from '../_lib/supabase.js';
 
 export default async function handler(request, response) {
   const context = requestContext(request, '/api/appointments');

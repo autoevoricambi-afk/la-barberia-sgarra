@@ -1,8 +1,8 @@
-import { isValidUuid, validateBlockPayload } from '../../platform/booking-domain.mjs';
-import { authenticateAdmin } from '../_lib/admin.js';
-import { readJsonBody, rejectMethod, sendJson } from '../_lib/http.js';
-import { logError, logInfo, requestContext } from '../_lib/logging.js';
-import { supabaseRequest } from '../_lib/supabase.js';
+import { isValidUuid, validateBlockPayload } from '../../../platform/booking-domain.mjs';
+import { authenticateAdmin } from '../../_lib/admin.js';
+import { readJsonBody, rejectMethod, sendJson } from '../../_lib/http.js';
+import { logError, logInfo, requestContext } from '../../_lib/logging.js';
+import { supabaseRequest } from '../../_lib/supabase.js';
 
 async function authorized(request, response) {
   try {

@@ -1,9 +1,9 @@
-import { validateWaitlistPayload } from '../platform/booking-domain.mjs';
-import { readJsonBody, rejectMethod, sendJson } from './_lib/http.js';
-import { logError, logInfo, requestContext } from './_lib/logging.js';
-import { processPendingOutboxForWaitlistReference } from './_lib/notifications.js';
-import { consumeRateLimit } from './_lib/rate-limit.js';
-import { supabaseRequest } from './_lib/supabase.js';
+import { validateWaitlistPayload } from '../../platform/booking-domain.mjs';
+import { readJsonBody, rejectMethod, sendJson } from '../_lib/http.js';
+import { logError, logInfo, requestContext } from '../_lib/logging.js';
+import { processPendingOutboxForWaitlistReference } from '../_lib/notifications.js';
+import { consumeRateLimit } from '../_lib/rate-limit.js';
+import { supabaseRequest } from '../_lib/supabase.js';
 
 export default async function handler(request, response) {
   const context = requestContext(request, '/api/waitlist');

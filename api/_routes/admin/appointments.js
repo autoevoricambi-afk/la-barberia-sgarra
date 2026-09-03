@@ -2,12 +2,12 @@ import { randomUUID } from 'node:crypto';
 import {
   canTransition, isValidUuid, normalizeText,
   validateAdminBookingPayload, validateReschedulePayload
-} from '../../platform/booking-domain.mjs';
-import { authenticateAdmin } from '../_lib/admin.js';
-import { readJsonBody, rejectMethod, sendJson } from '../_lib/http.js';
-import { logError, logInfo, requestContext } from '../_lib/logging.js';
-import { processPendingOutboxForReference } from '../_lib/notifications.js';
-import { supabaseRequest } from '../_lib/supabase.js';
+} from '../../../platform/booking-domain.mjs';
+import { authenticateAdmin } from '../../_lib/admin.js';
+import { readJsonBody, rejectMethod, sendJson } from '../../_lib/http.js';
+import { logError, logInfo, requestContext } from '../../_lib/logging.js';
+import { processPendingOutboxForReference } from '../../_lib/notifications.js';
+import { supabaseRequest } from '../../_lib/supabase.js';
 
 function validDate(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));

@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import publicConfigHandler from '../api/public-config.js';
-import waitlistHandler from '../api/waitlist.js';
-import inventoryHandler from '../api/admin/inventory.js';
-import adminWaitlistHandler from '../api/admin/waitlist.js';
-import cronHandler from '../api/cron/process-outbox.js';
+import publicConfigHandler from '../api/_routes/public-config.js';
+import waitlistHandler from '../api/_routes/waitlist.js';
+import inventoryHandler from '../api/_routes/admin/inventory.js';
+import adminWaitlistHandler from '../api/_routes/admin/waitlist.js';
+import cronHandler from '../api/_routes/cron/process-outbox.js';
+import routerHandler from '../api/[...route].js';
 
 function responseRecorder() {
   return {
@@ -42,6 +43,18 @@ async function withBackend(fetchImplementation, run) {
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), { status, headers: { 'Content-Type': 'application/json' } });
 }
+
+test('router unico conserva tutti gli URL API sul piano Hobby', async () => {
+  const healthResponse = responseRecorder();
+  await routerHandler({ method: 'GET', query: { route: ['health'] } }, healthResponse);
+  assert.equal(healthResponse.statusCode, 200);
+  assert.equal(healthResponse.payload.service, 'sgarra-booking-api');
+
+  const missingResponse = responseRecorder();
+  await routerHandler({ method: 'GET', query: { route: ['not', 'found'] } }, missingResponse);
+  assert.equal(missingResponse.statusCode, 404);
+  assert.equal(missingResponse.payload.error.code, 'route_not_found');
+});
 
 test('configurazione pubblica usa il catalogo live senza esporre segreti', async () => {
   await withBackend(async (url) => {

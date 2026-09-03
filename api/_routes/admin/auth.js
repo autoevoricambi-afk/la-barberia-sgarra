@@ -1,7 +1,7 @@
-import { adminEmails, isAllowedAdminEmail } from '../_lib/admin.js';
-import { readJsonBody, rejectMethod, sendJson } from '../_lib/http.js';
-import { consumeRateLimit } from '../_lib/rate-limit.js';
-import { getSupabaseConfig } from '../_lib/supabase.js';
+import { adminEmails, isAllowedAdminEmail } from '../../_lib/admin.js';
+import { readJsonBody, rejectMethod, sendJson } from '../../_lib/http.js';
+import { consumeRateLimit } from '../../_lib/rate-limit.js';
+import { getSupabaseConfig } from '../../_lib/supabase.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') return rejectMethod(response, ['POST']);

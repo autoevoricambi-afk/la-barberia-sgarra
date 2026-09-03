@@ -1,7 +1,7 @@
-import { normalizeText } from '../platform/booking-domain.mjs';
-import { readJsonBody, rejectMethod, sendJson } from './_lib/http.js';
-import { consumeRateLimit } from './_lib/rate-limit.js';
-import { supabaseRequest } from './_lib/supabase.js';
+import { normalizeText } from '../../platform/booking-domain.mjs';
+import { readJsonBody, rejectMethod, sendJson } from '../_lib/http.js';
+import { consumeRateLimit } from '../_lib/rate-limit.js';
+import { supabaseRequest } from '../_lib/supabase.js';
 
 const EVENTS = new Set([
   'service_view', 'booking_start', 'slot_view', 'slot_selected', 'booking_confirmed',

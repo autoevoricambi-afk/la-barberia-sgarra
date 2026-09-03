@@ -1,6 +1,6 @@
-import { rejectMethod, sendJson } from './_lib/http.js';
-import { logError, logInfo, requestContext } from './_lib/logging.js';
-import { supabaseRequest } from './_lib/supabase.js';
+import { rejectMethod, sendJson } from '../_lib/http.js';
+import { logError, logInfo, requestContext } from '../_lib/logging.js';
+import { supabaseRequest } from '../_lib/supabase.js';
 
 export default async function handler(request, response) {
   const context = requestContext(request, '/api/public-config');

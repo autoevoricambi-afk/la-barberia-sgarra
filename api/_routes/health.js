@@ -1,5 +1,5 @@
-import { sendJson, rejectMethod } from './_lib/http.js';
-import { getSupabaseConfig } from './_lib/supabase.js';
+import { sendJson, rejectMethod } from '../_lib/http.js';
+import { getSupabaseConfig } from '../_lib/supabase.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') return rejectMethod(response, ['GET']);

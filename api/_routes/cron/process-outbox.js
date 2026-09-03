@@ -1,8 +1,8 @@
 import { timingSafeEqual } from 'node:crypto';
-import { rejectMethod, sendJson } from '../_lib/http.js';
-import { logError, logInfo, requestContext } from '../_lib/logging.js';
-import { processOutboxEvent } from '../_lib/notifications.js';
-import { supabaseRequest } from '../_lib/supabase.js';
+import { rejectMethod, sendJson } from '../../_lib/http.js';
+import { logError, logInfo, requestContext } from '../../_lib/logging.js';
+import { processOutboxEvent } from '../../_lib/notifications.js';
+import { supabaseRequest } from '../../_lib/supabase.js';
 
 function authorized(request) {
   const secret = String(process.env.CRON_SECRET || '');

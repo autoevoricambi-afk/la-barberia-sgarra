@@ -1,6 +1,6 @@
-import { authenticateAdmin } from '../_lib/admin.js';
-import { rejectMethod, sendJson } from '../_lib/http.js';
-import { supabaseRequest } from '../_lib/supabase.js';
+import { authenticateAdmin } from '../../_lib/admin.js';
+import { rejectMethod, sendJson } from '../../_lib/http.js';
+import { supabaseRequest } from '../../_lib/supabase.js';
 
 function dateOr(value, fallback) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '')) ? value : fallback;
