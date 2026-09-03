@@ -1,8 +1,12 @@
 import { validateBookingPayload } from '../platform/booking-domain.mjs';
 import { getClientIp, publicError, readJsonBody, rejectMethod, sendJson } from './_lib/http.js';
+import { logError, logInfo, requestContext } from './_lib/logging.js';
+import { processPendingOutboxForReference } from './_lib/notifications.js';
+import { consumeRateLimit } from './_lib/rate-limit.js';
 import { supabaseRequest } from './_lib/supabase.js';
 
 export default async function handler(request, response) {
+  const context = requestContext(request, '/api/appointments');
   if (request.method !== 'POST') return rejectMethod(response, ['POST']);
 
   let body;
@@ -21,6 +25,10 @@ export default async function handler(request, response) {
   }
 
   try {
+    if (!await consumeRateLimit(request, 'booking-create', 8, 900)) {
+      logInfo(context, 'rate_limited');
+      return sendJson(response, 429, { ok: false, error: { code: 'rate_limited', message: 'Troppe richieste. Riprova tra qualche minuto.' } }, { 'Retry-After': '900' });
+    }
     const result = await supabaseRequest('/rest/v1/rpc/create_public_booking', {
       method: 'POST',
       body: {
@@ -37,6 +45,12 @@ export default async function handler(request, response) {
       }
     });
     const booking = Array.isArray(result) ? result[0] : result;
+    try {
+      await processPendingOutboxForReference(booking?.reference);
+    } catch (notificationError) {
+      logError(context, 'booking_notification_deferred', notificationError);
+    }
+    logInfo(context, 'booking_created', { status: booking?.status || 'pending' });
     return sendJson(response, 201, {
       ok: true,
       booking: {
@@ -46,6 +60,7 @@ export default async function handler(request, response) {
       }
     });
   } catch (error) {
+    logError(context, 'booking_create_failed', error);
     const safe = publicError(error);
     return sendJson(response, safe.status, { ok: false, error: { code: safe.code, message: safe.message } });
   }

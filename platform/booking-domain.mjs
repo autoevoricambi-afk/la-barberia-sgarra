@@ -18,6 +18,10 @@ export const APPOINTMENT_TRANSITIONS = Object.freeze({
 
 const BOOKING_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ISO_INSTANT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ADMIN_SOURCES = new Set(['admin', 'phone', 'whatsapp', 'walk_in']);
+const BLOCK_KINDS = new Set(['manual', 'closure', 'break']);
 
 export function normalizeText(value, maxLength = 200) {
   return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
@@ -48,6 +52,10 @@ export function isValidInstant(value) {
   const clean = normalizeText(value, 40);
   if (!ISO_INSTANT_PATTERN.test(clean)) return false;
   return Number.isFinite(Date.parse(clean));
+}
+
+export function isValidUuid(value) {
+  return UUID_PATTERN.test(normalizeText(value, 40));
 }
 
 export function canTransition(from, to) {
@@ -109,4 +117,94 @@ export function validateAvailabilityQuery(input) {
     value: { date, staffSlug, serviceIds },
     errors
   };
+}
+
+export function validateAdminBookingPayload(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const base = validateBookingPayload({
+    ...source,
+    privacyVersion: source.privacyVersion || 'admin-recorded-v1',
+    idempotencyKey: source.idempotencyKey || 'admin_missing_key_0000',
+    website: ''
+  });
+  const value = {
+    ...base.value,
+    source: normalizeText(source.source || 'admin', 20)
+  };
+  const errors = { ...base.errors };
+  delete errors.website;
+  if (!ADMIN_SOURCES.has(value.source)) errors.source = 'Origine appuntamento non valida.';
+  return { ok: Object.keys(errors).length === 0, value, errors };
+}
+
+export function validateReschedulePayload(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const value = {
+    appointmentId: normalizeText(source.appointmentId, 40),
+    startsAt: normalizeText(source.startsAt, 40),
+    reason: normalizeText(source.reason, 300)
+  };
+  const errors = {};
+  if (!isValidUuid(value.appointmentId)) errors.appointmentId = 'Appuntamento non valido.';
+  if (!isValidInstant(value.startsAt)) errors.startsAt = 'Nuovo orario non valido.';
+  return { ok: Object.keys(errors).length === 0, value, errors };
+}
+
+export function validateBlockPayload(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const value = {
+    blockId: normalizeText(source.blockId, 40),
+    staffSlug: normalizeText(source.staffSlug || 'paolo-sgarra', 80),
+    startsAt: normalizeText(source.startsAt, 40),
+    endsAt: normalizeText(source.endsAt, 40),
+    kind: normalizeText(source.kind || 'manual', 20),
+    reason: normalizeText(source.reason, 200)
+  };
+  const errors = {};
+  if (value.blockId && !isValidUuid(value.blockId)) errors.blockId = 'Blocco non valido.';
+  if (!isValidBookingId(value.staffSlug)) errors.staffSlug = 'Operatore non valido.';
+  if (!isValidInstant(value.startsAt)) errors.startsAt = 'Inizio non valido.';
+  if (!isValidInstant(value.endsAt) || Date.parse(value.endsAt) <= Date.parse(value.startsAt)) {
+    errors.endsAt = 'La fine deve essere successiva all’inizio.';
+  }
+  if (!BLOCK_KINDS.has(value.kind)) errors.kind = 'Tipo di blocco non valido.';
+  return { ok: Object.keys(errors).length === 0, value, errors };
+}
+
+export function validateBookingSettingsPayload(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const services = Array.isArray(source.services) ? source.services.map((item) => ({
+    slug: normalizeText(item?.slug, 80),
+    name: normalizeText(item?.name, 100),
+    description: normalizeText(item?.description, 240),
+    durationMinutes: Number(item?.durationMinutes),
+    bufferBeforeMinutes: Number(item?.bufferBeforeMinutes || 0),
+    bufferAfterMinutes: Number(item?.bufferAfterMinutes || 0),
+    priceCents: item?.priceCents === null || item?.priceCents === '' ? null : Number(item?.priceCents),
+    active: item?.active === true,
+    sortOrder: Number(item?.sortOrder || 0)
+  })) : [];
+  const hours = Array.isArray(source.hours) ? source.hours.map((item) => ({
+    weekday: Number(item?.weekday),
+    opensAt: normalizeText(item?.opensAt, 5),
+    closesAt: normalizeText(item?.closesAt, 5),
+    active: item?.active !== false
+  })) : [];
+  const location = {
+    minNoticeMinutes: Number(source.location?.minNoticeMinutes ?? 120),
+    bookingHorizonDays: Number(source.location?.bookingHorizonDays ?? 45),
+    slotIntervalMinutes: Number(source.location?.slotIntervalMinutes ?? 15)
+  };
+  const errors = {};
+  if (!services.length || services.length > 40) errors.services = 'Inserisci da uno a quaranta servizi.';
+  if (services.some((item) => !isValidBookingId(item.slug) || item.name.length < 2)) errors.services = 'Nome o identificativo servizio non valido.';
+  if (new Set(services.map((item) => item.slug)).size !== services.length) errors.services = 'Gli identificativi dei servizi devono essere univoci.';
+  if (services.some((item) => !Number.isInteger(item.durationMinutes) || item.durationMinutes < 5 || item.durationMinutes > 480)) errors.services = 'Durata servizio non valida.';
+  if (services.some((item) => !Number.isInteger(item.bufferBeforeMinutes) || item.bufferBeforeMinutes < 0 || item.bufferBeforeMinutes > 120 || !Number.isInteger(item.bufferAfterMinutes) || item.bufferAfterMinutes < 0 || item.bufferAfterMinutes > 120)) errors.services = 'Buffer servizio non valido.';
+  if (services.some((item) => item.priceCents !== null && (!Number.isInteger(item.priceCents) || item.priceCents < 0 || item.priceCents > 100000))) errors.services = 'Prezzo servizio non valido.';
+  if (hours.length > 28 || hours.some((item) => !Number.isInteger(item.weekday) || item.weekday < 0 || item.weekday > 6 || !TIME_PATTERN.test(item.opensAt) || !TIME_PATTERN.test(item.closesAt) || item.closesAt <= item.opensAt)) errors.hours = 'Fascia oraria non valida.';
+  if (!Number.isInteger(location.minNoticeMinutes) || location.minNoticeMinutes < 0 || location.minNoticeMinutes > 10080) errors.location = 'Anticipo minimo non valido.';
+  if (!Number.isInteger(location.bookingHorizonDays) || location.bookingHorizonDays < 1 || location.bookingHorizonDays > 365) errors.location = 'Orizzonte prenotazioni non valido.';
+  if (![5, 10, 15, 20, 30, 60].includes(location.slotIntervalMinutes)) errors.location = 'Intervallo slot non valido.';
+  return { ok: Object.keys(errors).length === 0, value: { services, hours, location }, errors };
 }

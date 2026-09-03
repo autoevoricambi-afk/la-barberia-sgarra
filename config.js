@@ -140,6 +140,7 @@ window.SITE_CONFIG = Object.freeze({
 
   GA4_MEASUREMENT_ID: '',
   CLARITY_PROJECT_ID: '',
+  firstPartyAnalyticsEnabled: false,
   debug: false,
   showCookieBannerWhenTracking: true
 });

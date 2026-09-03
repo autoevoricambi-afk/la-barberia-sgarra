@@ -8,6 +8,12 @@ export default async function handler(request, response) {
     ok: true,
     service: 'sgarra-booking-api',
     bookingConfigured: config.ready,
+    adminConfigured: Boolean(config.url && config.anonKey && process.env.ADMIN_EMAILS),
+    notificationsConfigured: Boolean(
+      (process.env.RESEND_API_KEY && process.env.NOTIFICATION_FROM_EMAIL && process.env.BARBER_NOTIFICATION_EMAIL)
+      || process.env.BOOKING_NOTIFICATION_WEBHOOK_URL
+    ),
+    rateLimitConfigured: Boolean(process.env.RATE_LIMIT_SALT),
     timestamp: new Date().toISOString()
   });
 }

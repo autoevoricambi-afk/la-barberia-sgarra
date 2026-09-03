@@ -1,11 +1,20 @@
 import { adminEmails, isAllowedAdminEmail } from '../_lib/admin.js';
 import { readJsonBody, rejectMethod, sendJson } from '../_lib/http.js';
+import { consumeRateLimit } from '../_lib/rate-limit.js';
 import { getSupabaseConfig } from '../_lib/supabase.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') return rejectMethod(response, ['POST']);
   const config = getSupabaseConfig();
   if (!config.url || !config.anonKey || adminEmails().size === 0) {
+    return sendJson(response, 503, { ok: false, error: { code: 'admin_not_configured', message: 'Gestionale non ancora collegato.' } });
+  }
+
+  try {
+    if (!await consumeRateLimit(request, 'admin-auth', 5, 900)) {
+      return sendJson(response, 429, { ok: false, error: { code: 'rate_limited', message: 'Troppi tentativi. Riprova tra qualche minuto.' } }, { 'Retry-After': '900' });
+    }
+  } catch {
     return sendJson(response, 503, { ok: false, error: { code: 'admin_not_configured', message: 'Gestionale non ancora collegato.' } });
   }
 

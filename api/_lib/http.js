@@ -1,4 +1,4 @@
-const MAX_BODY_BYTES = 16 * 1024;
+const MAX_BODY_BYTES = 64 * 1024;
 
 export function sendJson(response, status, payload, extraHeaders = {}) {
   Object.entries({
@@ -39,6 +39,9 @@ export function getClientIp(request) {
 export function publicError(error) {
   if (error?.code === 'booking_not_configured') {
     return { status: 503, code: error.code, message: 'Prenotazione online non ancora attiva.' };
+  }
+  if (error?.code === 'rate_limit_not_configured') {
+    return { status: 503, code: 'booking_not_configured', message: 'Prenotazione online non ancora attiva.' };
   }
   if (error?.code === 'slot_unavailable' || error?.details?.includes?.('slot_unavailable')) {
     return { status: 409, code: 'slot_unavailable', message: 'Questo orario non è più disponibile.' };

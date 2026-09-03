@@ -83,16 +83,28 @@ const requiredFiles = [
   'api/appointments.js',
   'api/admin/auth.js',
   'api/admin/appointments.js',
+  'api/admin/blocks.js',
+  'api/admin/catalog.js',
+  'api/admin/metrics.js',
+  'api/events.js',
+  'api/cron/process-outbox.js',
+  'api/_lib/logging.js',
+  'api/_lib/notifications.js',
+  'api/_lib/rate-limit.js',
   'platform/booking-domain.mjs',
   'tools/dev-server.mjs',
   'supabase/migrations/202609010001_core_booking.sql',
   'supabase/migrations/202609010002_admin_workflow.sql',
+  'supabase/migrations/202609020003_operational_pilot.sql',
   'docs/PAOLO_DISCOVERY.md',
   'docs/CONTROL_ROOM.md',
   'docs/BASELINE_2026-09-01.md',
   'docs/BOOKING_DOMAIN_CONTRACT.md',
   'docs/LAUNCH_GATE.md',
-  'docs/DEPLOYMENT_MAP.md'
+  'docs/DEPLOYMENT_MAP.md',
+  'docs/PILOT_30_DAYS.md',
+  'docs/OPERATIONS_RUNBOOK.md',
+  'tools/backup-supabase.mjs'
 ];
 
 requiredFiles.forEach((file) => check(fs.existsSync(path.join(root, file)), `File richiesto: ${file}`));
@@ -151,6 +163,9 @@ check(/Nome, telefono, servizio/i.test(privacyHtml), 'Privacy coerente con i cam
 check(privacyHtml.includes('Partita IVA 08703770720'), 'Titolare e Partita IVA presenti nella privacy');
 check(privacyHtml.includes('index.html#dove-siamo'), 'Link contatti privacy valido');
 check(/<meta name="robots" content="noindex, nofollow"/.test(adminHtml), 'Gestionale escluso dai motori di ricerca');
+check(adminHtml.includes('id="new-appointment-form"'), 'Gestionale crea appuntamenti manuali');
+check(adminHtml.includes('id="block-form"'), 'Gestionale crea pause e chiusure');
+check(adminHtml.includes('id="settings-form"'), 'Gestionale configura servizi e orari');
 
 const coreMigration = read('supabase/migrations/202609010001_core_booking.sql');
 check(coreMigration.includes('appointments_no_active_overlap'), 'Database impedisce sovrapposizioni attive');
@@ -158,6 +173,20 @@ check(coreMigration.includes("timezone text not null default 'Europe/Rome'"), 'T
 check(coreMigration.includes('idempotency_key text not null unique'), 'Creazione appuntamento idempotente');
 check(!/insert into public\.services\s*\(/i.test(coreMigration), 'Nessun prezzo o durata di servizio inventati nella migrazione');
 check(!/insert into public\.business_hours\s*\(/i.test(coreMigration), 'Nessun orario di apertura inventato nella migrazione');
+
+const operationalMigration = read('supabase/migrations/202609020003_operational_pilot.sql');
+check(operationalMigration.includes('reserved_starts_at'), 'Buffer prenotazioni modellati separatamente');
+check(operationalMigration.includes('consume_public_rate_limit'), 'Rate limit persistente nel database');
+check(operationalMigration.includes('admin_reschedule_appointment'), 'Spostamento appuntamento atomico');
+check(operationalMigration.includes('admin_create_schedule_block'), 'Blocchi agenda atomici');
+check(operationalMigration.includes('admin_replace_booking_settings'), 'Configurazione operativa versionata');
+check(operationalMigration.includes('service_conflicts'), 'Combinazioni servizio incompatibili protette');
+check(Array.isArray(vercel.crons) && vercel.crons.some((item) => item.path === '/api/cron/process-outbox'), 'Cron recupero notifiche configurato');
+
+const envTemplate = read('.env.example');
+['RATE_LIMIT_SALT', 'CRON_SECRET', 'BACKUP_ENCRYPTION_KEY'].forEach((key) => {
+  check(envTemplate.includes(`${key}=`), `Variabile operativa documentata: ${key}`);
+});
 
 passes.forEach((message) => console.log(`PASS  ${message}`));
 

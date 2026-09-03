@@ -4,9 +4,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import appointments from '../api/appointments.js';
 import availability from '../api/availability.js';
+import events from '../api/events.js';
 import health from '../api/health.js';
 import adminAuth from '../api/admin/auth.js';
 import adminAppointments from '../api/admin/appointments.js';
+import adminBlocks from '../api/admin/blocks.js';
+import adminCatalog from '../api/admin/catalog.js';
+import adminMetrics from '../api/admin/metrics.js';
+import processOutbox from '../api/cron/process-outbox.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const port = Number(process.env.SGARRA_DEV_PORT || 8080);
@@ -14,8 +19,13 @@ const apiRoutes = new Map([
   ['/api/health', health],
   ['/api/availability', availability],
   ['/api/appointments', appointments],
+  ['/api/events', events],
   ['/api/admin/auth', adminAuth],
-  ['/api/admin/appointments', adminAppointments]
+  ['/api/admin/appointments', adminAppointments],
+  ['/api/admin/blocks', adminBlocks],
+  ['/api/admin/catalog', adminCatalog],
+  ['/api/admin/metrics', adminMetrics],
+  ['/api/cron/process-outbox', processOutbox]
 ]);
 
 const mimeTypes = {
@@ -39,7 +49,7 @@ function bodyFrom(request) {
     const chunks = [];
     request.on('data', (chunk) => {
       total += chunk.length;
-      if (total > 16 * 1024) {
+      if (total > 64 * 1024) {
         reject(new Error('body_too_large'));
         request.destroy();
         return;

@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="theme-color" content="#0c0c0c" />
-  <title>Agenda | La Barberia Sgarra</title>
+  <title>Gestionale | La Barberia Sgarra</title>
   <link rel="icon" href="../assets/icons/favicon.ico" />
   <link rel="stylesheet" href="../styles.css" />
   <link rel="stylesheet" href="admin.css" />
 </head>
 <body class="admin-body">
-  <a class="skip-link" href="#admin-main">Vai all’agenda</a>
+  <a class="skip-link" href="#admin-main">Vai al gestionale</a>
   <header class="admin-header">
     <a class="brand" href="../index.html" aria-label="Torna al sito">
       <img src="../assets/brand/logo-256.webp" width="56" height="56" alt="" />
-      <span class="brand-text"><strong>La Barberia Sgarra</strong><small>Gestionale</small></span>
+      <span class="brand-text"><strong>La Barberia Sgarra</strong><small>Control Room</small></span>
     </a>
     <button type="button" class="admin-link" id="logout" hidden>Esci</button>
   </header>
@@ -37,27 +37,136 @@
       <div class="admin-title-row">
         <div>
           <p class="eyebrow">Controllo operativo</p>
-          <h1>Agenda</h1>
+          <h1>Gestionale</h1>
         </div>
-        <button type="button" class="button button-secondary" id="refresh-agenda">Aggiorna</button>
+        <button type="button" class="button button-secondary" id="refresh-all">Aggiorna</button>
       </div>
 
-      <div class="admin-date-row">
-        <label for="agenda-date">Dal giorno</label>
-        <input type="date" id="agenda-date" />
-      </div>
+      <nav class="admin-tabs" aria-label="Sezioni gestionale">
+        <button type="button" class="is-active" data-admin-tab="agenda">Agenda</button>
+        <button type="button" data-admin-tab="new">Nuovo</button>
+        <button type="button" data-admin-tab="block">Blocca</button>
+        <button type="button" data-admin-tab="settings">Configura</button>
+      </nav>
 
-      <section class="admin-kpis" aria-label="Riepilogo agenda">
-        <article><span>Da confermare</span><strong id="kpi-pending">0</strong></article>
-        <article><span>Confermati</span><strong id="kpi-confirmed">0</strong></article>
-        <article><span>Completati</span><strong id="kpi-completed">0</strong></article>
+      <section class="admin-view is-active" data-admin-view="agenda">
+        <div class="admin-date-row">
+          <label for="agenda-date">Settimana dal</label>
+          <input type="date" id="agenda-date" />
+        </div>
+        <section class="admin-kpis" aria-label="Riepilogo agenda">
+          <article><span>Da confermare</span><strong id="kpi-pending">0</strong></article>
+          <article><span>Confermati</span><strong id="kpi-confirmed">0</strong></article>
+          <article><span>Completati</span><strong id="kpi-completed">0</strong></article>
+          <article><span>Cancellati</span><strong id="kpi-cancelled">0</strong></article>
+          <article><span>No-show</span><strong id="kpi-no-show">0</strong></article>
+          <article><span>Da sito</span><strong id="kpi-website">0</strong></article>
+        </section>
+        <p class="admin-status" id="agenda-status" role="status" aria-live="polite"></p>
+        <div class="agenda-layout">
+          <div>
+            <h2 class="admin-section-title">Appuntamenti</h2>
+            <div class="agenda-list" id="agenda-list"></div>
+          </div>
+          <aside>
+            <h2 class="admin-section-title">Blocchi agenda</h2>
+            <div class="block-list" id="block-list"></div>
+          </aside>
+        </div>
       </section>
 
-      <p class="admin-status" id="agenda-status" role="status" aria-live="polite"></p>
-      <div class="agenda-list" id="agenda-list"></div>
+      <section class="admin-view" data-admin-view="new" hidden>
+        <div class="admin-card">
+          <p class="eyebrow">Telefono · WhatsApp · Passaggio</p>
+          <h2>Nuovo appuntamento</h2>
+          <form id="new-appointment-form" class="admin-form">
+            <div class="form-grid">
+              <label>Nome cliente<input id="new-name" autocomplete="name" required minlength="2" /></label>
+              <label>Telefono<input id="new-phone" type="tel" autocomplete="tel" required /></label>
+              <label>Data e ora<input id="new-start" type="datetime-local" required /></label>
+              <label>Origine
+                <select id="new-source">
+                  <option value="phone">Telefono</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="walk_in">Di persona</option>
+                  <option value="admin">Gestionale</option>
+                </select>
+              </label>
+            </div>
+            <fieldset>
+              <legend>Servizi</legend>
+              <div class="service-picker" id="new-services"></div>
+            </fieldset>
+            <label>Note<textarea id="new-notes" rows="3" maxlength="500"></textarea></label>
+            <button class="button button-primary" type="submit">Salva appuntamento</button>
+          </form>
+          <p class="admin-status" id="new-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="admin-view" data-admin-view="block" hidden>
+        <div class="admin-card">
+          <p class="eyebrow">Pausa · Ferie · Chiusura</p>
+          <h2>Blocca l’agenda</h2>
+          <form id="block-form" class="admin-form">
+            <div class="form-grid">
+              <label>Inizio<input id="block-start" type="datetime-local" required /></label>
+              <label>Fine<input id="block-end" type="datetime-local" required /></label>
+              <label>Tipo
+                <select id="block-kind">
+                  <option value="break">Pausa</option>
+                  <option value="closure">Chiusura</option>
+                  <option value="manual">Altro blocco</option>
+                </select>
+              </label>
+              <label>Motivo<input id="block-reason" maxlength="200" placeholder="Facoltativo" /></label>
+            </div>
+            <button class="button button-primary" type="submit">Crea blocco</button>
+          </form>
+          <p class="admin-status" id="block-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="admin-view" data-admin-view="settings" hidden>
+        <div class="admin-card">
+          <p class="eyebrow">Fonte unica</p>
+          <h2>Servizi e orari</h2>
+          <p class="admin-help">Questi valori alimentano direttamente gli slot prenotabili. Salvali soltanto dopo la conferma di Paolo.</p>
+          <form id="settings-form" class="admin-form">
+            <div class="form-grid">
+              <label>Anticipo minimo (min)<input id="setting-notice" type="number" min="0" max="10080" required /></label>
+              <label>Giorni prenotabili<input id="setting-horizon" type="number" min="1" max="365" required /></label>
+              <label>Intervallo slot
+                <select id="setting-interval"><option>5</option><option>10</option><option selected>15</option><option>20</option><option>30</option><option>60</option></select>
+              </label>
+            </div>
+            <div class="settings-heading"><h3>Catalogo</h3><button type="button" class="mini-button" id="add-service">Aggiungi servizio</button></div>
+            <div id="settings-services" class="settings-list"></div>
+            <div class="settings-heading"><h3>Fasce orarie</h3><button type="button" class="mini-button" id="add-hour">Aggiungi fascia</button></div>
+            <div id="settings-hours" class="settings-list"></div>
+            <button class="button button-primary" type="submit">Salva configurazione</button>
+          </form>
+          <p class="admin-status" id="settings-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
     </section>
   </main>
 
+  <dialog id="edit-dialog" class="admin-dialog">
+    <form method="dialog" id="edit-form" class="admin-form">
+      <button class="dialog-close" value="cancel" aria-label="Chiudi">×</button>
+      <p class="eyebrow">Modifica appuntamento</p>
+      <h2 id="edit-title">Appuntamento</h2>
+      <input type="hidden" id="edit-id" />
+      <label>Nuova data e ora<input id="edit-start" type="datetime-local" /></label>
+      <label>Note<textarea id="edit-notes" rows="4" maxlength="500"></textarea></label>
+      <div class="dialog-actions">
+        <button type="button" class="button button-secondary" id="save-notes">Salva note</button>
+        <button type="button" class="button button-primary" id="save-reschedule">Sposta</button>
+      </div>
+      <p class="admin-status" id="edit-status" role="status" aria-live="polite"></p>
+    </form>
+  </dialog>
   <script type="module" src="admin.js"></script>
 </body>
 </html>

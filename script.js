@@ -518,6 +518,18 @@
     try {
       if (typeof window.gtag === 'function') window.gtag('event', eventName, safe);
     } catch (e2) { /* no-op */ }
+    try {
+      var consent = localStorage.getItem('sgarra_tracking_consent');
+      var allowed = ['service_view', 'booking_start', 'slot_view', 'slot_selected', 'booking_confirmed', 'booking_cancelled', 'appointment_completed', 'no_show', 'review_requested', 'review_clicked', 'rebooking_confirmed'];
+      if (config.firstPartyAnalyticsEnabled === true && consent === 'accepted' && allowed.indexOf(eventName) !== -1) {
+        fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          keepalive: true,
+          body: JSON.stringify({ eventName: eventName, path: location.pathname, source: 'website', properties: safe })
+        }).catch(function () { /* la misurazione non blocca mai il sito */ });
+      }
+    } catch (e3) { /* no-op */ }
     if (config.debug) console.info('[trackEvent]', eventName, safe);
   }
   window.trackEvent = trackEvent;
@@ -543,7 +555,7 @@
   function initCookieBanner() {
     var banner = document.getElementById('cookie-banner');
     if (!banner) return;
-    var hasIds = String(config.GA4_MEASUREMENT_ID || '').trim() || String(config.CLARITY_PROJECT_ID || '').trim();
+    var hasIds = String(config.GA4_MEASUREMENT_ID || '').trim() || String(config.CLARITY_PROJECT_ID || '').trim() || config.firstPartyAnalyticsEnabled === true;
     if (!hasIds || !config.showCookieBannerWhenTracking) return;
     var consent = null;
     try { consent = localStorage.getItem('sgarra_tracking_consent'); } catch (e) { consent = null; }
