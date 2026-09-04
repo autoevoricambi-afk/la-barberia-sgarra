@@ -13,7 +13,7 @@ window.SITE_CONFIG = Object.freeze({
   vatNumber: '08703770720',
   foundingDate: '',
   priceRange: '',
-  googleBusinessUrl: '',
+  googleBusinessUrl: 'https://share.google/LM2DalvQ9mnTZB1kh',
 
   /**
    * `request`: il flusso prepara WhatsApp senza salvare dati.
@@ -42,8 +42,7 @@ window.SITE_CONFIG = Object.freeze({
     label: 'Via Corato 48, Andria'
   },
 
-  mapsUrl:
-    'https://www.google.com/maps/search/?api=1&query=La%20Barberia%20Sgarra%20Via%20Corato%2048%20Andria',
+  mapsUrl: 'https://share.google/LM2DalvQ9mnTZB1kh',
 
   instagramUrl: 'https://www.instagram.com/la_barberia_sgarra/',
   instagramHandle: '@la_barberia_sgarra',
