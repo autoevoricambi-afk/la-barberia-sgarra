@@ -104,6 +104,7 @@ const requiredFiles = [
   'supabase/migrations/202609010002_admin_workflow.sql',
   'supabase/migrations/202609020003_operational_pilot.sql',
   'supabase/migrations/202609030004_complete_operations.sql',
+  'supabase/migrations/202609040005_verified_pilot_configuration.sql',
   'docs/PAOLO_DISCOVERY.md',
   'docs/CONTROL_ROOM.md',
   'docs/BASELINE_2026-09-01.md',
@@ -149,6 +150,9 @@ check(!indexHtml.includes('fonts.googleapis.com') && !indexHtml.includes('fonts.
 check(/launchReady:\s*false/.test(configJs), 'Staging protetto da launchReady=false');
 check(/mode:\s*'request'/.test(configJs), 'Booking reale disattivato finché catalogo e orari non sono approvati');
 check(/serviceCatalogReady:\s*false/.test(configJs), 'Catalogo booking protetto da feature gate');
+check(/openingHoursApproved:\s*true/.test(configJs), 'Orari pubblici confermati e visibili');
+check(/slot_interval_minutes = 30/.test(read('supabase/migrations/202609040005_verified_pilot_configuration.sql')), 'Slot prenotabili ogni 30 minuti');
+check(/price_cents = null/.test(read('supabase/migrations/202609040005_verified_pilot_configuration.sql')), 'Prezzi non pubblicati nel pilot');
 check(/pwaEnabled:\s*true/.test(configJs), 'Web app installabile nel pilot');
 check(/siteUrl:\s*'https:\/\/la-barberia-sgarra\.vercel\.app'/.test(configJs), 'URL tecnico centralizzato');
 check(/Disallow:\s*\//.test(robotsTxt), 'robots.txt blocca lo staging');

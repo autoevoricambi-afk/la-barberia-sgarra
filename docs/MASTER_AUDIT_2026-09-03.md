@@ -39,7 +39,7 @@ dal titolare e non vanno inclusi in chiavi o account personali dello sviluppator
 ## Sequenza di chiusura
 
 1. Pubblicare il branch operativo come preview Vercel.
-2. Collegare Supabase e applicare le quattro migrazioni.
+2. Collegare Supabase e applicare le cinque migrazioni.
 3. Inserire segreti con scope Preview e Production separati.
 4. Creare Paolo in Supabase Auth e configurare catalogo, orari, inventario e regole.
 5. Collegare il canale notifiche e collaudare ogni evento reale.

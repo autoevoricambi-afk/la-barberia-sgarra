@@ -37,7 +37,9 @@ export default async function handler(request, response) {
         'Content-Type': 'application/json',
         ...(redirectTo ? { 'x-supabase-redirect-to': redirectTo } : {})
       },
-      body: JSON.stringify({ email, create_user: false })
+      // L'allow-list viene verificata prima della chiamata: al primo accesso Paolo può
+      // creare automaticamente il proprio utente senza interventi nel dashboard Supabase.
+      body: JSON.stringify({ email, create_user: true })
     });
   } catch {
     return sendJson(response, 502, { ok: false, error: { code: 'auth_delivery_failed', message: 'Invio del link non riuscito.' } });

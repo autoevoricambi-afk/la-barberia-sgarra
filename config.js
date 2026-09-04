@@ -49,11 +49,21 @@ window.SITE_CONFIG = Object.freeze({
   instagramHandle: '@la_barberia_sgarra',
 
   /** Orari: non mostrare in UI finché openingHoursApproved !== true */
-  openingHoursApproved: false,
+  openingHoursApproved: true,
   openingHours: {
-    verified: false,
-    note: '08:00–13:00 / 15:00–20:00',
-    days: []
+    verified: true,
+    note: 'Mar–Gio 08:30–13:00 / 15:30–20:30 · Ven 08:30–13:00 / 14:30–20:30 · Sab 08:30–20:30 · Lun e Dom chiuso',
+    days: [
+      { weekday: 2, opensAt: '08:30', closesAt: '13:00' },
+      { weekday: 2, opensAt: '15:30', closesAt: '20:30' },
+      { weekday: 3, opensAt: '08:30', closesAt: '13:00' },
+      { weekday: 3, opensAt: '15:30', closesAt: '20:30' },
+      { weekday: 4, opensAt: '08:30', closesAt: '13:00' },
+      { weekday: 4, opensAt: '15:30', closesAt: '20:30' },
+      { weekday: 5, opensAt: '08:30', closesAt: '13:00' },
+      { weekday: 5, opensAt: '14:30', closesAt: '20:30' },
+      { weekday: 6, opensAt: '08:30', closesAt: '20:30' }
+    ]
   },
 
   /** Bio pubblica: se false → copy neutro sicuro, nessuna nota editoriale */

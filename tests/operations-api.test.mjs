@@ -5,6 +5,7 @@ import waitlistHandler from '../api/_routes/waitlist.js';
 import inventoryHandler from '../api/_routes/admin/inventory.js';
 import adminWaitlistHandler from '../api/_routes/admin/waitlist.js';
 import cronHandler from '../api/_routes/cron/process-outbox.js';
+import adminAuthHandler from '../api/_routes/admin/auth.js';
 import routerHandler from '../api/[...route].js';
 
 function responseRecorder() {
@@ -160,5 +161,28 @@ test('cron pianifica promemoria e processa una coda vuota con segreto valido', a
     assert.equal(response.statusCode, 200);
     assert.deepEqual(response.payload, { ok: true, processed: 0, failed: 0 });
     assert.ok(calls.some((item) => item.includes('enqueue_due_automations')));
+  });
+});
+
+test('il primo magic link crea solo l’utente amministratore in allow-list', async () => {
+  let otpBody;
+  await withBackend(async (url, options = {}) => {
+    const target = String(url);
+    if (target.includes('consume_public_rate_limit')) return jsonResponse(true);
+    if (target.includes('/auth/v1/otp')) {
+      otpBody = JSON.parse(options.body);
+      return jsonResponse({});
+    }
+    return jsonResponse([]);
+  }, async () => {
+    const response = responseRecorder();
+    await adminAuthHandler({
+      method: 'POST',
+      headers: { 'x-forwarded-for': '127.0.0.1' },
+      socket: {},
+      body: { email: 'paolo@example.com' }
+    }, response);
+    assert.equal(response.statusCode, 202);
+    assert.deepEqual(otpBody, { email: 'paolo@example.com', create_user: true });
   });
 });

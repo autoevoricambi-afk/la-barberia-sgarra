@@ -4,7 +4,7 @@
 
 1. Tenere il pilot su Vercel Hobby finché limiti e cron giornaliero sono sufficienti; passare a
    Pro solo per un'esigenza misurata.
-2. Creare Supabase nell'account della Barberia e applicare, in ordine, le quattro migrazioni in
+2. Creare Supabase nell'account della Barberia e applicare, in ordine, le cinque migrazioni in
    `supabase/migrations`, scegliendo una regione europea vicina a `fra1` (Francoforte), dove
    vengono eseguite le funzioni Vercel.
 3. Collegare l'integrazione Vercel + Supabase: deve sincronizzare `SUPABASE_URL`,
