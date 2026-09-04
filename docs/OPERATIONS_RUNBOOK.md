@@ -6,7 +6,9 @@
    Pro solo per un'esigenza misurata.
 2. Creare Supabase nell'account della Barberia e applicare, in ordine, le quattro migrazioni in
    `supabase/migrations`.
-3. Inserire in Vercel tutte le chiavi presenti in `.env.example`, con scope separati.
+3. Collegare l'integrazione Vercel + Supabase: deve sincronizzare `SUPABASE_URL`,
+   `SUPABASE_PUBLISHABLE_KEY` e `SUPABASE_SECRET_KEY`. Il codice supporta anche i nomi legacy,
+   ma la chiave segreta resta esclusivamente server-side e non va mai copiata in chat o nel repository.
 4. Creare l'utente Supabase Auth di Paolo e autorizzare l'email in `ADMIN_EMAILS`.
 5. Verificare il dominio mittente Resend o configurare il webhook WhatsApp/SMS.
 6. Accedere al gestionale e salvare servizi e orari confermati da Paolo.

@@ -4,12 +4,20 @@ function normalizeBaseUrl(value) {
 
 export function getSupabaseConfig() {
   const url = normalizeBaseUrl(process.env.SUPABASE_URL);
-  const anonKey = String(process.env.SUPABASE_ANON_KEY || '').trim();
-  const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const publishableKey = String(
+    process.env.SUPABASE_PUBLISHABLE_KEY
+    || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    || process.env.SUPABASE_ANON_KEY
+    || ''
+  ).trim();
+  const secretKey = String(process.env.SUPABASE_SECRET_KEY || '').trim();
+  const legacyServiceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const serviceRoleKey = secretKey || legacyServiceRoleKey;
   return {
     url,
-    anonKey,
+    anonKey: publishableKey,
     serviceRoleKey,
+    serviceKeyUsesBearer: Boolean(!secretKey && legacyServiceRoleKey),
     ready: Boolean(url && serviceRoleKey)
   };
 }
@@ -24,14 +32,15 @@ export async function supabaseRequest(path, options = {}) {
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 8000);
-  const token = options.token || config.serviceRoleKey;
+  const authorizationToken = options.token
+    || (config.serviceKeyUsesBearer ? config.serviceRoleKey : '');
 
   try {
     const response = await fetch(`${config.url}${path}`, {
       method: options.method || 'GET',
       headers: {
         apikey: config.serviceRoleKey,
-        Authorization: `Bearer ${token}`,
+        ...(authorizationToken ? { Authorization: `Bearer ${authorizationToken}` } : {}),
         Accept: 'application/json',
         ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
         ...(options.headers || {})

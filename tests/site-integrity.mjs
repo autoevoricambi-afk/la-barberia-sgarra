@@ -213,7 +213,11 @@ check(completeMigration.includes('estimatedRevenueCents'), 'Valore economico age
 check(completeMigration.includes('public_booking_enabled'), 'Attivazione booking protetta nel database');
 
 const envTemplate = read('.env.example');
-['RATE_LIMIT_SALT', 'CRON_SECRET', 'BACKUP_ENCRYPTION_KEY', 'BOOKING_NOTIFICATION_WEBHOOK_SECRET'].forEach((key) => {
+[
+  'SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_SECRET_KEY',
+  'RATE_LIMIT_SALT', 'CRON_SECRET', 'BACKUP_ENCRYPTION_KEY',
+  'BOOKING_NOTIFICATION_WEBHOOK_SECRET'
+].forEach((key) => {
   check(envTemplate.includes(`${key}=`), `Variabile operativa documentata: ${key}`);
 });
 
