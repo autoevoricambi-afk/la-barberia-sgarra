@@ -162,6 +162,8 @@ check(manifest.display === 'standalone', 'Manifest PWA standalone');
 check(Array.isArray(manifest.icons) && manifest.icons.every((icon) => fs.existsSync(path.join(root, icon.src))), 'Icone manifest presenti');
 
 const vercel = JSON.parse(read('vercel.json'));
+check(vercel.$schema === 'https://openapi.vercel.sh/vercel.json', 'Schema configurazione Vercel dichiarato');
+check(Array.isArray(vercel.regions) && vercel.regions.length === 1 && vercel.regions[0] === 'fra1', 'Funzioni Vercel eseguite in Europa (Francoforte)');
 const headerKeys = new Set((vercel.headers || []).flatMap((rule) => (rule.headers || []).map((header) => header.key)));
 ['X-Content-Type-Options', 'X-Frame-Options', 'Referrer-Policy', 'Permissions-Policy'].forEach((key) => {
   check(headerKeys.has(key), `Header Vercel: ${key}`);
