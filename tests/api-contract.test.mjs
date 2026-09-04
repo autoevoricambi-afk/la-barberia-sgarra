@@ -15,19 +15,41 @@ function responseRecorder() {
   };
 }
 
+async function withBackendUnset(run) {
+  const names = [
+    'SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY',
+    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_ANON_KEY',
+    'SUPABASE_SECRET_KEY', 'SUPABASE_SERVICE_ROLE_KEY',
+    'ADMIN_EMAILS', 'RESEND_API_KEY', 'NOTIFICATION_FROM_EMAIL',
+    'BARBER_NOTIFICATION_EMAIL', 'BOOKING_NOTIFICATION_WEBHOOK_URL',
+    'RATE_LIMIT_SALT'
+  ];
+  const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
+  for (const name of names) delete process.env[name];
+  try { await run(); }
+  finally {
+    for (const name of names) {
+      if (previous[name] === undefined) delete process.env[name];
+      else process.env[name] = previous[name];
+    }
+  }
+}
+
 test('health non espone segreti e dichiara backend non configurato', async () => {
-  const response = responseRecorder();
-  await healthHandler({ method: 'GET' }, response);
-  assert.equal(response.statusCode, 200);
-  assert.equal(response.payload.ok, true);
-  assert.equal(response.payload.bookingConfigured, false);
-  assert.deepEqual(Object.keys(response.payload).sort(), [
-    'adminConfigured', 'bookingConfigured', 'notificationsConfigured',
-    'ok', 'rateLimitConfigured', 'service', 'timestamp'
-  ]);
-  assert.equal(response.payload.adminConfigured, false);
-  assert.equal(response.payload.notificationsConfigured, false);
-  assert.equal(response.payload.rateLimitConfigured, false);
+  await withBackendUnset(async () => {
+    const response = responseRecorder();
+    await healthHandler({ method: 'GET' }, response);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.payload.ok, true);
+    assert.equal(response.payload.bookingConfigured, false);
+    assert.deepEqual(Object.keys(response.payload).sort(), [
+      'adminConfigured', 'bookingConfigured', 'notificationsConfigured',
+      'ok', 'rateLimitConfigured', 'service', 'timestamp'
+    ]);
+    assert.equal(response.payload.adminConfigured, false);
+    assert.equal(response.payload.notificationsConfigured, false);
+    assert.equal(response.payload.rateLimitConfigured, false);
+  });
 });
 
 test('availability rifiuta query non valida prima di contattare il database', async () => {
@@ -38,13 +60,15 @@ test('availability rifiuta query non valida prima di contattare il database', as
 });
 
 test('availability valida risponde 503 finché il database non è collegato', async () => {
-  const response = responseRecorder();
-  await availabilityHandler({
-    method: 'GET',
-    query: { date: '2026-09-05', staffSlug: 'paolo-sgarra', serviceIds: 'taglio-uomo' }
-  }, response);
-  assert.equal(response.statusCode, 503);
-  assert.equal(response.payload.error.code, 'booking_not_configured');
+  await withBackendUnset(async () => {
+    const response = responseRecorder();
+    await availabilityHandler({
+      method: 'GET',
+      query: { date: '2026-09-05', staffSlug: 'paolo-sgarra', serviceIds: 'taglio-uomo' }
+    }, response);
+    assert.equal(response.statusCode, 503);
+    assert.equal(response.payload.error.code, 'booking_not_configured');
+  });
 });
 
 test('appointments rifiuta payload incompleto senza salvare dati', async () => {
