@@ -1,4 +1,5 @@
-const TOKEN_KEY = 'sgarra_admin_access_token';
+const SESSION_KEY = 'sgarra_admin_session_v1';
+const LEGACY_TOKEN_KEY = 'sgarra_admin_access_token';
 const loginPanel = document.getElementById('login-panel');
 const agendaPanel = document.getElementById('agenda-panel');
 const loginStatus = document.getElementById('login-status');
@@ -32,12 +33,61 @@ function requestKey(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
 }
 
-function accessTokenFromHash() {
-  return new URLSearchParams(location.hash.replace(/^#/, '')).get('access_token') || '';
+function sessionFromHash() {
+  const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const accessToken = params.get('access_token') || '';
+  if (!accessToken) return null;
+  const expiresIn = Math.max(60, Number(params.get('expires_in') || 3600));
+  return {
+    accessToken,
+    refreshToken: params.get('refresh_token') || '',
+    expiresAt: Date.now() + expiresIn * 1000
+  };
 }
 
-function getToken() {
-  return sessionStorage.getItem(TOKEN_KEY) || '';
+function readSession() {
+  try {
+    const value = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    return value && typeof value.accessToken === 'string' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(session) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+}
+
+async function refreshSession() {
+  const current = readSession();
+  if (!current?.refreshToken) return '';
+  const response = await fetch('/api/admin/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken: current.refreshToken })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.session?.accessToken) {
+    clearSession();
+    return '';
+  }
+  saveSession(data.session);
+  return data.session.accessToken;
+}
+
+async function getValidToken(forceRefresh = false) {
+  const current = readSession();
+  if (!current) return '';
+  if (!forceRefresh && current.accessToken && Number(current.expiresAt) > Date.now() + 60_000) {
+    return current.accessToken;
+  }
+  return refreshSession();
 }
 
 function setAuthenticated(authenticated) {
@@ -47,21 +97,27 @@ function setAuthenticated(authenticated) {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-      ...(options.headers || {})
-    }
-  });
+  let token = await getValidToken();
+  const send = () => fetch(path, {
+      ...options,
+      headers: {
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {})
+      }
+    });
+  let response = await send();
+  if (response.status === 401 && readSession()?.refreshToken) {
+    token = await getValidToken(true);
+    if (token) response = await send();
+  }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(data?.error?.message || 'Operazione non riuscita.');
     error.status = response.status;
     error.fields = data?.error?.fields || {};
     if (response.status === 401) {
-      sessionStorage.removeItem(TOKEN_KEY);
+      clearSession();
       setAuthenticated(false);
     }
     throw error;
@@ -661,18 +717,18 @@ document.getElementById('settings-form').addEventListener('submit', async (event
 document.getElementById('refresh-all').addEventListener('click', loadAll);
 agendaDate.addEventListener('change', () => Promise.all([loadAgenda(), loadBlocks(), loadMetrics()]).catch((error) => { agendaStatus.textContent = error.message; }));
 logoutButton.addEventListener('click', () => {
-  sessionStorage.removeItem(TOKEN_KEY);
+  clearSession();
   setAuthenticated(false);
 });
 
 agendaDate.value = todayISO();
-const hashToken = accessTokenFromHash();
-if (hashToken) {
-  sessionStorage.setItem(TOKEN_KEY, hashToken);
-  history.replaceState(null, '', location.pathname);
+const hashSession = sessionFromHash();
+if (hashSession) {
+  saveSession(hashSession);
+  history.replaceState(null, '', `${location.pathname}${location.search}`);
 }
-setAuthenticated(Boolean(getToken()));
-if (getToken()) loadAll();
+setAuthenticated(Boolean(readSession()));
+if (readSession()) loadAll();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));

@@ -86,6 +86,7 @@ const requiredFiles = [
   'api/_routes/public-config.js',
   'api/_routes/waitlist.js',
   'api/_routes/admin/auth.js',
+  'api/_routes/admin/refresh.js',
   'api/_routes/admin/appointments.js',
   'api/_routes/admin/blocks.js',
   'api/_routes/admin/catalog.js',
@@ -187,7 +188,8 @@ check(adminHtml.includes('id="settings-form"'), 'Gestionale configura servizi e 
 check(adminHtml.includes('id="product-form"'), 'Gestionale controlla le giacenze');
 check(adminHtml.includes('id="waitlist-list"'), 'Gestionale controlla la lista d’attesa');
 check(indexHtml.includes('id="waitlist-box"'), 'Sito offre la lista d’attesa quando gli slot sono esauriti');
-check(devServer.includes("'/api/public-config'") && devServer.includes("'/api/waitlist'") && devServer.includes("'/api/admin/inventory'") && devServer.includes("'/api/admin/waitlist'"), 'Server locale espone tutte le nuove API');
+check(devServer.includes("'/api/public-config'") && devServer.includes("'/api/waitlist'") && devServer.includes("'/api/admin/refresh'") && devServer.includes("'/api/admin/inventory'") && devServer.includes("'/api/admin/waitlist'"), 'Server locale espone tutte le nuove API');
+check(read('admin/admin.js').includes('refreshToken') && read('admin/admin.js').includes('localStorage'), 'Gestionale conserva e rinnova la sessione in modo persistente');
 check(indexHtml.includes('id="customer-email"'), 'Booking raccoglie email facoltativa per le notifiche');
 
 const coreMigration = read('supabase/migrations/202609010001_core_booking.sql');

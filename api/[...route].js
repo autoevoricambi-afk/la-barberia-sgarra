@@ -6,6 +6,7 @@ import publicConfig from './_routes/public-config.js';
 import waitlist from './_routes/waitlist.js';
 import adminAppointments from './_routes/admin/appointments.js';
 import adminAuth from './_routes/admin/auth.js';
+import adminRefresh from './_routes/admin/refresh.js';
 import adminBlocks from './_routes/admin/blocks.js';
 import adminCatalog from './_routes/admin/catalog.js';
 import adminInventory from './_routes/admin/inventory.js';
@@ -22,6 +23,7 @@ const handlers = new Map([
   ['waitlist', waitlist],
   ['events', events],
   ['admin/auth', adminAuth],
+  ['admin/refresh', adminRefresh],
   ['admin/appointments', adminAppointments],
   ['admin/blocks', adminBlocks],
   ['admin/catalog', adminCatalog],

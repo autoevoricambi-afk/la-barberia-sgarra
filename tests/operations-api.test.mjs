@@ -6,6 +6,7 @@ import inventoryHandler from '../api/_routes/admin/inventory.js';
 import adminWaitlistHandler from '../api/_routes/admin/waitlist.js';
 import cronHandler from '../api/_routes/cron/process-outbox.js';
 import adminAuthHandler from '../api/_routes/admin/auth.js';
+import adminRefreshHandler from '../api/_routes/admin/refresh.js';
 import routerHandler from '../api/[...route].js';
 
 function responseRecorder() {
@@ -71,6 +72,34 @@ test('configurazione pubblica usa il catalogo live senza esporre segreti', async
     assert.equal(response.payload.configured, true);
     assert.equal(response.payload.bookingEnabled, false);
     assert.equal(JSON.stringify(response.payload).includes('service-role-test'), false);
+  });
+});
+
+test('il gestionale rinnova soltanto la sessione di Paolo autorizzato', async () => {
+  const calls = [];
+  await withBackend(async (url) => {
+    const target = String(url); calls.push(target);
+    if (target.includes('consume_public_rate_limit')) return jsonResponse(true);
+    if (target.includes('/auth/v1/token?grant_type=refresh_token')) {
+      return jsonResponse({
+        access_token: 'new-access-token',
+        refresh_token: 'new-refresh-token-12345678901234567890',
+        expires_in: 3600,
+        user: { email: 'paolo@example.com' }
+      });
+    }
+    return jsonResponse([]);
+  }, async () => {
+    const response = responseRecorder();
+    await adminRefreshHandler({
+      method: 'POST', headers: { 'x-forwarded-for': '127.0.0.1' }, socket: {},
+      body: { refreshToken: 'old-refresh-token-12345678901234567890' }
+    }, response);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.payload.session.accessToken, 'new-access-token');
+    assert.equal(response.payload.session.refreshToken.startsWith('new-refresh-token'), true);
+    assert.equal(JSON.stringify(response.payload).includes('paolo@example.com'), false);
+    assert.ok(calls.some((item) => item.includes('grant_type=refresh_token')));
   });
 });
 

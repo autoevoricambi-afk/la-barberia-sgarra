@@ -9,6 +9,7 @@ import waitlist from '../api/_routes/waitlist.js';
 import events from '../api/_routes/events.js';
 import health from '../api/_routes/health.js';
 import adminAuth from '../api/_routes/admin/auth.js';
+import adminRefresh from '../api/_routes/admin/refresh.js';
 import adminAppointments from '../api/_routes/admin/appointments.js';
 import adminBlocks from '../api/_routes/admin/blocks.js';
 import adminCatalog from '../api/_routes/admin/catalog.js';
@@ -27,6 +28,7 @@ const apiRoutes = new Map([
   ['/api/waitlist', waitlist],
   ['/api/events', events],
   ['/api/admin/auth', adminAuth],
+  ['/api/admin/refresh', adminRefresh],
   ['/api/admin/appointments', adminAppointments],
   ['/api/admin/blocks', adminBlocks],
   ['/api/admin/catalog', adminCatalog],
