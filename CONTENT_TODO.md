@@ -1,13 +1,13 @@
 # CONTENT_TODO — dati da verificare o completare
 
-Aggiornato: 1 settembre 2026. La checklist completa e vincolante è in `docs/LAUNCH_GATE.md`; la raccolta dati da fare una sola volta con Paolo è in `docs/PAOLO_DISCOVERY.md`.
+Aggiornato: 7 settembre 2026. La checklist completa e vincolante è in `docs/LAUNCH_GATE.md`; la raccolta dati da fare una sola volta con Paolo è in `docs/PAOLO_DISCOVERY.md`.
 
 ## Critici
 
 - [ ] Dominio pubblico definitivo; fino ad allora resta l'URL tecnico Vercel e `launchReady: false`
-- [ ] Giorni di apertura per orari `08:00–13:00 / 15:00–20:00`
-- [ ] CAP/provincia (`76123`, `BT`) conferma formale
-- [ ] Google Business Profile URL
+- [x] Giorni e orari verificati: mar–gio 08:30–13:00 / 15:30–20:30; ven 08:30–13:00 / 14:30–20:30; sab 08:30–20:30; lun e dom chiuso
+- [x] CAP/provincia verificati: `76123`, `BT`
+- [x] Google Business Profile URL fornito da Paolo
 
 ## Paolo / copy
 
@@ -29,7 +29,7 @@ Aggiornato: 1 settembre 2026. La checklist completa e vincolante è in `docs/LAU
 
 - [ ] Prezzi
 - [ ] Recensioni verificate (`reviewsEnabled` + voci `verified`)
-- [ ] Servizi da aggiungere/rimuovere
+- [x] Catalogo iniziale di nove servizi inserito; tutti durano 30 minuti
 
 ## Non inventare
 

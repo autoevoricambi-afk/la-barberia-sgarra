@@ -35,11 +35,11 @@ Originali esistenti **non eliminati**; nuova struttura in `assets/`.
 ## Contenuti / dati (non media)
 
 - [ ] Approvazione bio Paolo (testo attuale in `config.js` → `barber.bioApproved`)
-- [ ] Giorni di apertura collegati agli orari
+- [x] Giorni di apertura collegati agli orari verificati
 - [ ] Prezzi (solo se comunicati)
-- [ ] Recensioni Google verificate + link fonte
+- [x] Link profilo Google fornito da Paolo; testi recensione individuali non pubblicati
 - [ ] Dominio definitivo
-- [ ] Partita IVA / ragione sociale (solo con approvazione)
+- [x] Partita IVA / ragione sociale presenti in privacy
 - [ ] `foundingDate` (es. “Dal 2023”) solo se confermato
 
 ## Come attivare i video

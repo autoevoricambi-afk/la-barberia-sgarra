@@ -5,7 +5,7 @@ Il flag `launchReady` può diventare `true` solo quando tutti i blocchi P0 sono 
 ## Proprietà e infrastruttura
 
 - [ ] Dominio e account Vercel sotto controllo del progetto.
-- [ ] Deploy staging 200 da root repository.
+- [x] Deploy staging 200 da root repository.
 - [ ] HTTPS, redirect e rollback verificati.
 - [ ] Backup/export documentati.
 
@@ -30,7 +30,7 @@ Il flag `launchReady` può diventare `true` solo quando tutti i blocchi P0 sono 
 
 ## Qualità
 
-- [ ] Test automatici verdi.
+- [x] Test automatici verdi.
 - [ ] QA iPhone reale e Android.
 - [ ] Tastiera, date picker e safe-area verificati.
 - [ ] Accessibilità, performance e link esterni verificati.
@@ -41,7 +41,7 @@ Il flag `launchReady` può diventare `true` solo quando tutti i blocchi P0 sono 
 - [ ] Informativa coerente con sistema e fornitori effettivi.
 - [ ] Consenso marketing separato e documentato.
 - [ ] Retention, cancellazione ed export definiti.
-- [ ] Segreti solo lato server; rate limit e anti-spam attivi.
+- [x] Segreti solo lato server; rate limit e anti-spam attivi.
 - [ ] Accesso gestionale limitato all'email approvata da Paolo.
 - [ ] Cookie/tracker bloccati fino alla scelta quando necessario.
 
