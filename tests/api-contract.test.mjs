@@ -52,6 +52,20 @@ test('health non espone segreti e dichiara backend non configurato', async () =>
   });
 });
 
+test('health deriva il rate limit dalla chiave Supabase senza esporla', async () => {
+  await withBackendUnset(async () => {
+    process.env.SUPABASE_URL = 'https://project.supabase.co';
+    process.env.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test';
+    process.env.SUPABASE_SECRET_KEY = `sb_secret_${'x'.repeat(40)}`;
+    const response = responseRecorder();
+    await healthHandler({ method: 'GET' }, response);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.payload.bookingConfigured, true);
+    assert.equal(response.payload.rateLimitConfigured, true);
+    assert.equal(JSON.stringify(response.payload).includes('sb_secret_'), false);
+  });
+});
+
 test('availability rifiuta query non valida prima di contattare il database', async () => {
   const response = responseRecorder();
   await availabilityHandler({ method: 'GET', query: { date: 'domani' } }, response);

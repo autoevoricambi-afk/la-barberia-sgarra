@@ -1,4 +1,5 @@
 import { sendJson, rejectMethod } from '../_lib/http.js';
+import { rateLimitConfigured } from '../_lib/rate-limit.js';
 import { getSupabaseConfig } from '../_lib/supabase.js';
 
 export default async function handler(request, response) {
@@ -13,7 +14,7 @@ export default async function handler(request, response) {
       (process.env.RESEND_API_KEY && process.env.NOTIFICATION_FROM_EMAIL && process.env.BARBER_NOTIFICATION_EMAIL)
       || process.env.BOOKING_NOTIFICATION_WEBHOOK_URL
     ),
-    rateLimitConfigured: Boolean(process.env.RATE_LIMIT_SALT),
+    rateLimitConfigured: rateLimitConfigured(),
     timestamp: new Date().toISOString()
   });
 }
