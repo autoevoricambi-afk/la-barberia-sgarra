@@ -34,6 +34,9 @@ const handlers = new Map([
 ]);
 
 function routeKey(request) {
+  const proxyRoute = request.query?.proxyRoute;
+  if (Array.isArray(proxyRoute)) return proxyRoute.join('/');
+  if (typeof proxyRoute === 'string' && proxyRoute) return proxyRoute.replace(/^\/+|\/+$/g, '');
   const route = request.query?.route;
   if (Array.isArray(route)) return route.join('/');
   if (typeof route === 'string' && route) return route.replace(/^\/+|\/+$/g, '');
