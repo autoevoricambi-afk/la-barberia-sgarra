@@ -27,7 +27,15 @@ export default async function handler(request, response) {
     return sendJson(response, 202, { ok: true, message: 'Se l’indirizzo è autorizzato riceverà il link di accesso.' });
   }
 
-  const redirectTo = String(process.env.ADMIN_REDIRECT_URL || '').trim();
+  const forwardedProto = String(request.headers?.['x-forwarded-proto'] || 'https').split(',')[0].trim().toLowerCase();
+  const forwardedHost = String(request.headers?.['x-forwarded-host'] || request.headers?.host || '').split(',')[0].trim();
+  const safeHost = /^[a-z0-9.-]+(?::\d+)?$/i.test(forwardedHost) ? forwardedHost : '';
+  const requestRedirect = safeHost ? `${forwardedProto === 'http' ? 'http' : 'https'}://${safeHost}/admin/` : '';
+  const configuredRedirect = String(process.env.ADMIN_REDIRECT_URL || '').trim();
+  // Prefer the host actually used for the login request, so preview/custom-domain
+  // magic links always return to the matching admin area. The configured value is
+  // retained only as a fallback when the request host cannot be trusted.
+  const redirectTo = requestRedirect || configuredRedirect;
   let authResponse;
   try {
     authResponse = await fetch(`${config.url}/auth/v1/otp`, {
