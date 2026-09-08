@@ -6,17 +6,17 @@
   <meta name="robots" content="noindex, nofollow" />
   <meta name="theme-color" content="#0c0c0c" />
   <title>Gestionale | La Barberia Sgarra</title>
-  <link rel="icon" href="../assets/icons/favicon.ico" />
-  <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="../styles.css" />
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="icon" href="/assets/icons/favicon.ico" />
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png" />
+  <link rel="manifest" href="/admin/manifest.webmanifest" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/admin/admin.css" />
 </head>
 <body class="admin-body">
   <a class="skip-link" href="#admin-main">Vai al gestionale</a>
   <header class="admin-header">
-    <a class="brand" href="../index.html" aria-label="Torna al sito">
-      <img src="../assets/brand/logo-256.webp" width="56" height="56" alt="" />
+    <a class="brand" href="/" aria-label="Torna al sito">
+      <img src="/assets/brand/logo-256.webp" width="56" height="56" alt="" />
       <span class="brand-text"><strong>La Barberia Sgarra</strong><small>Control Room</small></span>
     </a>
     <button type="button" class="admin-link" id="logout" hidden>Esci</button>
@@ -27,7 +27,7 @@
       <p class="eyebrow">Area riservata</p>
       <h1 id="login-title">Agenda di Paolo</h1>
       <p>Inserisci l’indirizzo autorizzato. Riceverai un link di accesso senza password.</p>
-      <form id="login-form" class="admin-login-form">
+      <form id="login-form" class="admin-login-form" action="/admin" method="post">
         <label for="admin-email">Email</label>
         <input id="admin-email" name="email" type="email" autocomplete="email" required />
         <button class="button button-primary" type="submit">Invia link sicuro</button>
@@ -214,6 +214,6 @@
       <p class="admin-status" id="edit-status" role="status" aria-live="polite"></p>
     </form>
   </dialog>
-  <script type="module" src="admin.js"></script>
+  <script type="module" src="/admin/admin.js"></script>
 </body>
 </html>
