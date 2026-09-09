@@ -5,8 +5,15 @@ import { consumeRateLimit } from '../../_lib/rate-limit.js';
 import { getSupabaseConfig } from '../../_lib/supabase.js';
 
 const ADMIN_USERNAME = 'paolo';
-const PASSWORD_SALT = 'eOxUn1oA2JWweDlAFTbwgA';
-const PASSWORD_HASH = 'looX7bKrns216YP0YgxHSn3yE3RV6rjdlKlyb7OZWw0';
+const DEFAULT_PASSWORD_SALT = 'eOxUn1oA2JWweDlAFTbwgA';
+const DEFAULT_PASSWORD_HASH = 'looX7bKrns216YP0YgxHSn3yE3RV6rjdlKlyb7OZWw0';
+
+function passwordMaterial() {
+  return {
+    salt: String(process.env.ADMIN_PASSWORD_SALT || DEFAULT_PASSWORD_SALT).trim(),
+    hash: String(process.env.ADMIN_PASSWORD_HASH || DEFAULT_PASSWORD_HASH).trim()
+  };
+}
 
 function verifyPassword(password) {
   const raw = String(password || '');
@@ -14,13 +21,14 @@ function verifyPassword(password) {
   let actual;
   let expected;
   try {
-    actual = scryptSync(raw, Buffer.from(PASSWORD_SALT, 'base64url'), 32, {
+    const material = passwordMaterial();
+    actual = scryptSync(raw, Buffer.from(material.salt, 'base64url'), 32, {
       N: 16384,
       r: 8,
       p: 1,
       maxmem: 64 * 1024 * 1024
     });
-    expected = Buffer.from(PASSWORD_HASH, 'base64url');
+    expected = Buffer.from(material.hash, 'base64url');
   } catch {
     return false;
   }
