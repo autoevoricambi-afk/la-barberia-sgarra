@@ -75,17 +75,16 @@ test('configurazione pubblica usa il catalogo live senza esporre segreti', async
   });
 });
 
-test('il gestionale rinnova soltanto la sessione di Paolo autorizzato', async () => {
+test('il gestionale rinnova soltanto una sessione opaca valida', async () => {
   const calls = [];
   await withBackend(async (url) => {
     const target = String(url); calls.push(target);
-    if (target.includes('consume_public_rate_limit')) return jsonResponse(true);
-    if (target.includes('/auth/v1/token?grant_type=refresh_token')) {
+    if (target.includes('admin_refresh_session')) {
       return jsonResponse({
-        access_token: 'new-access-token',
-        refresh_token: 'new-refresh-token-12345678901234567890',
-        expires_in: 3600,
-        user: { email: 'paolo@example.com' }
+        ok: true,
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token-12345678901234567890',
+        expiresAt: Date.now() + 3600_000
       });
     }
     return jsonResponse([]);
@@ -98,8 +97,7 @@ test('il gestionale rinnova soltanto la sessione di Paolo autorizzato', async ()
     assert.equal(response.statusCode, 200);
     assert.equal(response.payload.session.accessToken, 'new-access-token');
     assert.equal(response.payload.session.refreshToken.startsWith('new-refresh-token'), true);
-    assert.equal(JSON.stringify(response.payload).includes('paolo@example.com'), false);
-    assert.ok(calls.some((item) => item.includes('grant_type=refresh_token')));
+    assert.ok(calls.some((item) => item.includes('admin_refresh_session')));
   });
 });
 
@@ -129,11 +127,13 @@ test('lista d’attesa pubblica passa da rate limit, database e coda', async () 
   });
 });
 
-test('gestionale registra uno scarico di giacenza solo per Paolo autorizzato', async () => {
+test('gestionale registra uno scarico di giacenza solo per sessione admin valida', async () => {
   const calls = [];
   await withBackend(async (url) => {
     const target = String(url); calls.push(target);
-    if (target.includes('/auth/v1/user')) return jsonResponse({ id: 'admin-1', email: 'paolo@example.com' });
+    if (target.includes('admin_verify_session')) return jsonResponse({
+      ok: true, username: 'paolo', actorId: 'a3bb189e-8bf9-4db1-9fa4-55cb43fe1458'
+    });
     if (target.includes('admin_record_inventory_movement')) {
       return jsonResponse({ id: 'a3bb189e-8bf9-4db1-9fa4-55cb43fe1458', name: 'Cera', stock_quantity: 2 });
     }
@@ -156,7 +156,9 @@ test('gestionale registra uno scarico di giacenza solo per Paolo autorizzato', a
 test('gestionale aggiorna la lista d’attesa e conserva la consegna in coda', async () => {
   await withBackend(async (url) => {
     const target = String(url);
-    if (target.includes('/auth/v1/user')) return jsonResponse({ id: 'admin-1', email: 'paolo@example.com' });
+    if (target.includes('admin_verify_session')) return jsonResponse({
+      ok: true, username: 'paolo', actorId: 'a3bb189e-8bf9-4db1-9fa4-55cb43fe1458'
+    });
     if (target.includes('admin_update_waitlist')) return jsonResponse({
       id: 'a3bb189e-8bf9-4db1-9fa4-55cb43fe1458', reference: 'WL-TEST-1', status: 'notified'
     });
@@ -193,18 +195,17 @@ test('cron pianifica promemoria e processa una coda vuota con segreto valido', a
   });
 });
 
-test('accesso admin usa solo username paolo e password Supabase', async () => {
+test('accesso admin usa username paolo e sessione opaca nel database', async () => {
   let loginBody;
   await withBackend(async (url, options = {}) => {
     const target = String(url);
-    if (target.includes('consume_public_rate_limit')) return jsonResponse(true);
-    if (target.includes('/auth/v1/token?grant_type=password')) {
+    if (target.includes('admin_login')) {
       loginBody = JSON.parse(options.body);
       return jsonResponse({
-        access_token: 'access-token',
-        refresh_token: 'refresh-token-12345678901234567890',
-        expires_in: 3600,
-        user: { email: 'paolo@example.com' }
+        ok: true,
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token-12345678901234567890',
+        expiresAt: Date.now() + 3600_000
       });
     }
     return jsonResponse([]);
@@ -217,7 +218,7 @@ test('accesso admin usa solo username paolo e password Supabase', async () => {
       body: { username: 'paolo', password: 'Password-test-123!' }
     }, response);
     assert.equal(response.statusCode, 200);
-    assert.deepEqual(loginBody, { email: 'paolo@example.com', password: 'Password-test-123!' });
+    assert.deepEqual(loginBody, { p_username: 'paolo', p_password: 'Password-test-123!' });
     assert.equal(response.payload.user.username, 'paolo');
     assert.equal(response.payload.session.accessToken, 'access-token');
     assert.equal(JSON.stringify(response.payload).includes('paolo@example.com'), false);
