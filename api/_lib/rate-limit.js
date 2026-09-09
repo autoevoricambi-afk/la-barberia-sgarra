@@ -4,9 +4,10 @@ import { getSupabaseConfig, supabaseRequest } from './supabase.js';
 
 function rateLimitSalt() {
   const explicitSalt = String(process.env.RATE_LIMIT_SALT || '').trim();
+  const config = getSupabaseConfig();
   const secretSource = explicitSalt.length >= 32
     ? explicitSalt
-    : String(getSupabaseConfig().serviceRoleKey || '').trim();
+    : String(config.serviceRoleKey || config.anonKey || '').trim();
 
   if (secretSource.length < 32) {
     const error = new Error('rate_limit_not_configured');
@@ -15,14 +16,15 @@ function rateLimitSalt() {
   }
 
   return createHash('sha256')
-    .update(`sgarra-rate-limit:v1:${secretSource}`)
+    .update(`sgarra-rate-limit:v2:${config.url}:${secretSource}`)
     .digest('hex');
 }
 
 export function rateLimitConfigured() {
   const explicitSalt = String(process.env.RATE_LIMIT_SALT || '').trim();
   if (explicitSalt.length >= 32) return true;
-  return String(getSupabaseConfig().serviceRoleKey || '').trim().length >= 32;
+  const config = getSupabaseConfig();
+  return String(config.serviceRoleKey || config.anonKey || '').trim().length >= 32;
 }
 
 function fingerprint(request, scope) {
