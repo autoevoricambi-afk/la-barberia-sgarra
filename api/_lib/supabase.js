@@ -29,8 +29,7 @@ export function getSupabaseConfig() {
     anonKey: publishableKey,
     serviceRoleKey,
     serviceKeyUsesBearer: Boolean(!secretKey && legacyServiceRoleKey),
-    ready: Boolean(url && (serviceRoleKey || publishableKey)),
-    privilegedReady: Boolean(url && serviceRoleKey)
+    ready: Boolean(url && (serviceRoleKey || publishableKey))
   };
 }
 
