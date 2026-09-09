@@ -15,12 +15,15 @@ window.SITE_CONFIG = Object.freeze({
   priceRange: '',
   googleBusinessUrl: 'https://share.google/LM2DalvQ9mnTZB1kh',
 
-  /** Booking reale: catalogo e orari verificati nel database. */
+  /**
+   * Il fallback resta protetto; /api/public-config abilita live soltanto
+   * quando il database conferma catalogo e booking attivi.
+   */
   booking: {
-    mode: 'live',
+    mode: 'request',
     apiBase: '/api',
     staffSlug: 'paolo-sgarra',
-    serviceCatalogReady: true,
+    serviceCatalogReady: false,
     privacyVersion: '2026-09-01',
     bookingHorizonDays: 45
   },
@@ -72,7 +75,7 @@ window.SITE_CONFIG = Object.freeze({
   studioMediaApproved: true,
   locationMediaApproved: false,
 
-  /** Fallback coerente con il listino reale; in live viene poi aggiornato dall’API. */
+  /** Fallback coerente con il listino reale; in live viene aggiornato dall’API. */
   services: {
     primary: [
       { id: 'taglio', label: 'Taglio', desc: 'Taglio uomo · 30 min · €12,00' },
