@@ -20,7 +20,9 @@ export function isAllowedAdminEmail(email) {
 
 function localSessionKey() {
   const config = getSupabaseConfig();
-  const source = String(config.serviceRoleKey || process.env.RATE_LIMIT_SALT || '').trim();
+  const serviceRoleKey = String(config.serviceRoleKey || '').trim();
+  const rateLimitSalt = String(process.env.RATE_LIMIT_SALT || '').trim();
+  const source = serviceRoleKey.length >= 32 ? serviceRoleKey : rateLimitSalt;
   if (source.length < 32) return null;
   return createHash('sha256')
     .update(`${LOCAL_SESSION_VERSION}:${source}`)
