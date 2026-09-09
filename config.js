@@ -8,7 +8,7 @@ window.SITE_CONFIG = Object.freeze({
    * non superano la checklist di lancio. In staging il sito resta noindex.
    */
   launchReady: false,
-  siteUrl: 'https://la-barberia-sgarra.vercel.app',
+  siteUrl: 'https://labarberiasgarra.it',
   legalName: 'La Barberia Sgarra di Sgarra Paolo',
   vatNumber: '08703770720',
   foundingDate: '',
