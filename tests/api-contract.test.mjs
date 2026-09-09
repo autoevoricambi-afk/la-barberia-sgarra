@@ -35,20 +35,21 @@ async function withBackendUnset(run) {
   }
 }
 
-test('health non espone segreti e dichiara backend non configurato', async () => {
+test('health usa il backend integrato senza esporre segreti', async () => {
   await withBackendUnset(async () => {
     const response = responseRecorder();
     await healthHandler({ method: 'GET' }, response);
     assert.equal(response.statusCode, 200);
     assert.equal(response.payload.ok, true);
-    assert.equal(response.payload.bookingConfigured, false);
+    assert.equal(response.payload.bookingConfigured, true);
     assert.deepEqual(Object.keys(response.payload).sort(), [
       'adminConfigured', 'bookingConfigured', 'notificationsConfigured',
       'ok', 'rateLimitConfigured', 'service', 'timestamp'
     ]);
-    assert.equal(response.payload.adminConfigured, false);
+    assert.equal(response.payload.adminConfigured, true);
     assert.equal(response.payload.notificationsConfigured, false);
-    assert.equal(response.payload.rateLimitConfigured, false);
+    assert.equal(response.payload.rateLimitConfigured, true);
+    assert.equal(JSON.stringify(response.payload).includes('aiiwlytquapjjahulbbd'), false);
   });
 });
 
@@ -73,15 +74,22 @@ test('availability rifiuta query non valida prima di contattare il database', as
   assert.equal(response.payload.error.code, 'invalid_availability_query');
 });
 
-test('availability valida risponde 503 finché il database non è collegato', async () => {
+test('availability valida degrada in modo sicuro se il backend non risponde', async () => {
   await withBackendUnset(async () => {
-    const response = responseRecorder();
-    await availabilityHandler({
-      method: 'GET',
-      query: { date: '2026-09-05', staffSlug: 'paolo-sgarra', serviceIds: 'taglio-uomo' }
-    }, response);
-    assert.equal(response.statusCode, 503);
-    assert.equal(response.payload.error.code, 'booking_not_configured');
+    const previousFetch = global.fetch;
+    global.fetch = async () => { throw new Error('upstream unavailable'); };
+    try {
+      const response = responseRecorder();
+      await availabilityHandler({
+        method: 'GET',
+        query: { date: '2026-09-05', staffSlug: 'paolo-sgarra', serviceIds: 'taglio' },
+        headers: { 'x-forwarded-for': '127.0.0.1' }, socket: {}
+      }, response);
+      assert.equal(response.statusCode, 502);
+      assert.equal(response.payload.error.code, 'booking_service_error');
+    } finally {
+      global.fetch = previousFetch;
+    }
   });
 });
 
@@ -114,7 +122,7 @@ test('availability configurata attraversa rate limit e database', async () => {
     calls.push(String(url));
     const target = String(url);
     const payload = target.includes('public_booking_configuration')
-      ? { configured: true, bookingEnabled: true, services: [{ id: 'taglio-uomo' }] }
+      ? { configured: true, bookingEnabled: true, services: [{ id: 'taglio' }] }
       : target.includes('consume_public_rate_limit')
         ? true
         : [{ starts_at: '2026-09-05T08:00:00Z', ends_at: '2026-09-05T08:30:00Z', label: '10:00' }];
@@ -126,7 +134,7 @@ test('availability configurata attraversa rate limit e database', async () => {
     const response = responseRecorder();
     await availabilityHandler({
       method: 'GET',
-      query: { date: '2026-09-05', staffSlug: 'paolo-sgarra', serviceIds: 'taglio-uomo' },
+      query: { date: '2026-09-05', staffSlug: 'paolo-sgarra', serviceIds: 'taglio' },
       headers: { 'x-forwarded-for': '127.0.0.1' }, socket: {}
     }, response);
     assert.equal(response.statusCode, 200);
@@ -163,7 +171,7 @@ test('booking configurato salva e restituisce un riferimento senza esporre dati'
     await appointmentsHandler({
       method: 'POST',
       body: {
-        serviceIds: ['taglio-uomo'], staffSlug: 'paolo-sgarra',
+        serviceIds: ['taglio'], staffSlug: 'paolo-sgarra',
         startsAt: '2026-09-05T10:00:00+02:00', name: 'Mario Rossi',
         phone: '3290001122', notes: '', privacyVersion: '2026-09-01',
         idempotencyKey: 'booking_1234567890abcdef', website: ''
