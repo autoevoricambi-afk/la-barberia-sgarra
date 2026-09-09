@@ -193,14 +193,19 @@ test('cron pianifica promemoria e processa una coda vuota con segreto valido', a
   });
 });
 
-test('il primo magic link crea solo l’utente amministratore in allow-list', async () => {
-  let otpBody;
+test('accesso admin usa solo username paolo e password Supabase', async () => {
+  let loginBody;
   await withBackend(async (url, options = {}) => {
     const target = String(url);
     if (target.includes('consume_public_rate_limit')) return jsonResponse(true);
-    if (target.includes('/auth/v1/otp')) {
-      otpBody = JSON.parse(options.body);
-      return jsonResponse({});
+    if (target.includes('/auth/v1/token?grant_type=password')) {
+      loginBody = JSON.parse(options.body);
+      return jsonResponse({
+        access_token: 'access-token',
+        refresh_token: 'refresh-token-12345678901234567890',
+        expires_in: 3600,
+        user: { email: 'paolo@example.com' }
+      });
     }
     return jsonResponse([]);
   }, async () => {
@@ -209,9 +214,12 @@ test('il primo magic link crea solo l’utente amministratore in allow-list', as
       method: 'POST',
       headers: { 'x-forwarded-for': '127.0.0.1' },
       socket: {},
-      body: { email: 'paolo@example.com' }
+      body: { username: 'paolo', password: 'Password-test-123!' }
     }, response);
-    assert.equal(response.statusCode, 202);
-    assert.deepEqual(otpBody, { email: 'paolo@example.com', create_user: true });
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(loginBody, { email: 'paolo@example.com', password: 'Password-test-123!' });
+    assert.equal(response.payload.user.username, 'paolo');
+    assert.equal(response.payload.session.accessToken, 'access-token');
+    assert.equal(JSON.stringify(response.payload).includes('paolo@example.com'), false);
   });
 });
