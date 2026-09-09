@@ -1,14 +1,25 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
+
+const FALLBACK_SUPABASE_URL = 'https://aiiwlytquapjjahulbbd.supabase.co';
+// Legacy anon key is intentionally public and safe to ship client-side; RLS still protects data.
+const FALLBACK_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpaXdseXRxdWFwamphaHVsYmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0OTUzNTIsImV4cCI6MjEwNDA3MTM1Mn0.9u5rQT0zHdEzZaSETAJ3Ar1Tm9DGWspToOHKseEeT5w';
+const requestAuth = new AsyncLocalStorage();
+
 function normalizeBaseUrl(value) {
   return String(value || '').trim().replace(/\/+$/, '');
 }
 
+export function setSupabaseAdminSession(token) {
+  requestAuth.enterWith({ adminSessionToken: String(token || '').trim() });
+}
+
 export function getSupabaseConfig() {
-  const url = normalizeBaseUrl(process.env.SUPABASE_URL);
+  const url = normalizeBaseUrl(process.env.SUPABASE_URL || FALLBACK_SUPABASE_URL);
   const publishableKey = String(
-    process.env.SUPABASE_PUBLISHABLE_KEY
+    process.env.SUPABASE_ANON_KEY
+    || process.env.SUPABASE_PUBLISHABLE_KEY
     || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-    || process.env.SUPABASE_ANON_KEY
-    || ''
+    || FALLBACK_ANON_KEY
   ).trim();
   const secretKey = String(process.env.SUPABASE_SECRET_KEY || '').trim();
   const legacyServiceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
@@ -18,13 +29,19 @@ export function getSupabaseConfig() {
     anonKey: publishableKey,
     serviceRoleKey,
     serviceKeyUsesBearer: Boolean(!secretKey && legacyServiceRoleKey),
-    ready: Boolean(url && serviceRoleKey)
+    ready: Boolean(url && (serviceRoleKey || publishableKey)),
+    privilegedReady: Boolean(url && serviceRoleKey)
   };
+}
+
+function bearerForAnonymousKey(key) {
+  return String(key || '').startsWith('eyJ') ? String(key).trim() : '';
 }
 
 export async function supabaseRequest(path, options = {}) {
   const config = getSupabaseConfig();
-  if (!config.ready) {
+  const apiKey = config.serviceRoleKey || config.anonKey;
+  if (!config.url || !apiKey) {
     const error = new Error('booking_not_configured');
     error.code = 'booking_not_configured';
     throw error;
@@ -32,15 +49,20 @@ export async function supabaseRequest(path, options = {}) {
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 8000);
+  const contextToken = String(requestAuth.getStore()?.adminSessionToken || '').trim();
+  const adminSessionToken = String(options.adminSessionToken || contextToken || '').trim();
   const authorizationToken = options.token
-    || (config.serviceKeyUsesBearer ? config.serviceRoleKey : '');
+    || (config.serviceRoleKey
+      ? (config.serviceKeyUsesBearer ? config.serviceRoleKey : '')
+      : bearerForAnonymousKey(config.anonKey));
 
   try {
     const response = await fetch(`${config.url}${path}`, {
       method: options.method || 'GET',
       headers: {
-        apikey: config.serviceRoleKey,
+        apikey: apiKey,
         ...(authorizationToken ? { Authorization: `Bearer ${authorizationToken}` } : {}),
+        ...(adminSessionToken ? { 'x-admin-session': adminSessionToken } : {}),
         Accept: 'application/json',
         ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
         ...(options.headers || {})
@@ -56,7 +78,7 @@ export async function supabaseRequest(path, options = {}) {
     }
 
     if (!response.ok) {
-      const error = new Error(data?.message || `Supabase HTTP ${response.status}`);
+      const error = new Error(data?.message || data?.error_description || `Supabase HTTP ${response.status}`);
       error.code = data?.code || 'supabase_error';
       error.details = data?.details || '';
       error.status = response.status;
