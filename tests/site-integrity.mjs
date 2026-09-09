@@ -158,7 +158,7 @@ check(/price_cents = null/.test(read('supabase/migrations/202609040005_verified_
 check(/https:\/\/share\.google\/LM2DalvQ9mnTZB1kh/.test(read('supabase/migrations/202609070006_google_business_profile.sql')), 'Profilo Google ufficiale sincronizzato nel database');
 check(/googleBusinessUrl:\s*'https:\/\/share\.google\/LM2DalvQ9mnTZB1kh'/.test(configJs), 'Profilo Google ufficiale collegato nel sito');
 check(/pwaEnabled:\s*true/.test(configJs), 'Web app installabile nel pilot');
-check(/siteUrl:\s*'https:\/\/la-barberia-sgarra\.vercel\.app'/.test(configJs), 'URL tecnico centralizzato');
+check(/siteUrl:\s*'https:\/\/labarberiasgarra\.it'/.test(configJs), 'Dominio proprietario centralizzato');
 check(/Disallow:\s*\//.test(robotsTxt), 'robots.txt blocca lo staging');
 check(/<meta name="robots" content="noindex, nofollow" id="robots-meta"/.test(indexHtml), 'Meta robots staging presente');
 
