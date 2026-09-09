@@ -193,19 +193,14 @@ test('cron pianifica promemoria e processa una coda vuota con segreto valido', a
   });
 });
 
-test('accesso admin usa solo username paolo e password Supabase', async () => {
-  let loginBody;
+test('accesso admin verifica username e password tramite RPC protetta', async () => {
+  let verificationBody;
   await withBackend(async (url, options = {}) => {
     const target = String(url);
     if (target.includes('consume_public_rate_limit')) return jsonResponse(true);
-    if (target.includes('/auth/v1/token?grant_type=password')) {
-      loginBody = JSON.parse(options.body);
-      return jsonResponse({
-        access_token: 'access-token',
-        refresh_token: 'refresh-token-12345678901234567890',
-        expires_in: 3600,
-        user: { email: 'paolo@example.com' }
-      });
+    if (target.includes('verify_admin_credentials')) {
+      verificationBody = JSON.parse(options.body);
+      return jsonResponse(true);
     }
     return jsonResponse([]);
   }, async () => {
@@ -217,9 +212,10 @@ test('accesso admin usa solo username paolo e password Supabase', async () => {
       body: { username: 'paolo', password: 'Password-test-123!' }
     }, response);
     assert.equal(response.statusCode, 200);
-    assert.deepEqual(loginBody, { email: 'paolo@example.com', password: 'Password-test-123!' });
+    assert.deepEqual(verificationBody, { p_username: 'paolo', p_password: 'Password-test-123!' });
     assert.equal(response.payload.user.username, 'paolo');
-    assert.equal(response.payload.session.accessToken, 'access-token');
+    assert.equal(typeof response.payload.session.accessToken, 'string');
+    assert.equal(response.payload.session.accessToken.length > 20, true);
     assert.equal(JSON.stringify(response.payload).includes('paolo@example.com'), false);
   });
 });
