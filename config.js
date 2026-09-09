@@ -14,7 +14,7 @@ window.SITE_CONFIG = Object.freeze({
 
   booking: {
     mode: 'live',
-    apiBase: 'https://aiiwlytquapjjahulbbd.supabase.co/functions/v1/sgarra-api',
+    apiBase: '/api',
     staffSlug: 'paolo-sgarra',
     serviceCatalogReady: true,
     privacyVersion: '2026-09-01',
@@ -134,7 +134,7 @@ window.SITE_CONFIG = Object.freeze({
 
 (function loadTwoBarberEnhancements() {
   var script = document.createElement('script');
-  script.src = 'site-enhancements.js?v=20260909-final3';
+  script.src = 'site-enhancements.js?v=20260909-final4';
   script.async = false;
   document.head.appendChild(script);
 })();
