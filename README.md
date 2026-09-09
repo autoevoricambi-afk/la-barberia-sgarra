@@ -8,6 +8,7 @@ Sito premium mobile-first per La Barberia Sgarra: servizi, gallery tagli e preno
 - Prenotazione con Paolo Sgarra e Giuseppe.
 - Hero premium aggiornata con asset ottimizzati.
 - Notifiche automatiche disattivate in modo silenzioso finché non vengono configurati email/webhook.
+- Deploy finale forzato dopo sostituzione asset hero.
 
 ## Deploy
 
