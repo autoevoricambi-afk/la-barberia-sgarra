@@ -14,7 +14,7 @@ window.SITE_CONFIG = Object.freeze({
 
   booking: {
     mode: 'live',
-    apiBase: 'https://aiiwlytquapjjahulbbd.supabase.co/functions/v1/sgarra-api',
+    apiBase: '/api',
     staffSlug: 'paolo-sgarra',
     serviceCatalogReady: true,
     privacyVersion: '2026-09-01',
@@ -36,7 +36,6 @@ window.SITE_CONFIG = Object.freeze({
   },
 
   mapsUrl: 'https://share.google/LM2DalvQ9mnTZB1kh',
-
   instagramUrl: 'https://www.instagram.com/la_barberia_sgarra/',
   instagramHandle: '@la_barberia_sgarra',
 
@@ -68,7 +67,6 @@ window.SITE_CONFIG = Object.freeze({
   studioMediaApproved: true,
   locationMediaApproved: false,
 
-  /* Listino reale completo: tutti i servizi sono visibili senza sezioni nascoste. */
   services: {
     primary: [
       { id: 'taglio', label: 'Taglio', desc: 'Taglio uomo · 30 min · €12,00' },
@@ -136,7 +134,7 @@ window.SITE_CONFIG = Object.freeze({
 
 (function loadTwoBarberEnhancements() {
   var script = document.createElement('script');
-  script.src = 'site-enhancements.js?v=20260909-final';
+  script.src = 'site-enhancements.js?v=20260909-final2';
   script.async = false;
   document.head.appendChild(script);
 })();
