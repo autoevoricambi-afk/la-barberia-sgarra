@@ -9,6 +9,7 @@ const files = [
   'privacy.html',
   'styles.css',
   'script.js',
+  'site-enhancements.js',
   'config.js',
   'robots.txt',
   'sitemap.xml',
