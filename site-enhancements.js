@@ -38,34 +38,57 @@
     if (image) {
       image.src = 'assets/images/studio/interno-02.jpg';
       image.removeAttribute('srcset');
-      image.alt = '';
+      image.alt = 'Interno della Barberia Sgarra ad Andria';
     }
 
     const heroLead = document.querySelector('.hero-lead');
     if (heroLead) heroLead.textContent = 'Taglio, barba e cura dei dettagli con Paolo e Giuseppe, in Via Corato ad Andria.';
 
-    if (document.getElementById('sgarra-2026-restyle')) return;
     const style = document.createElement('style');
-    style.id = 'sgarra-2026-restyle';
+    style.id = 'sgarra-final-restyle';
     style.textContent = `
       .hero{isolation:isolate;background:#080a09}
       .hero-media{overflow:hidden;background:#080a09}
       .hero-media picture,.hero-media picture img{width:100%;height:100%}
-      .hero-media picture img{object-fit:cover;object-position:center 48%;filter:blur(1.8px) brightness(.78) saturate(.92) contrast(1.08);transform:scale(1.025)}
-      .hero-veil{background:linear-gradient(90deg,rgba(4,7,5,.82) 0%,rgba(4,7,5,.54) 42%,rgba(4,7,5,.25) 72%,rgba(4,7,5,.36) 100%),linear-gradient(0deg,rgba(4,7,5,.62) 0%,rgba(4,7,5,.05) 54%,rgba(4,7,5,.30) 100%)}
-      .hero-content{max-width:760px;text-shadow:0 2px 18px rgba(0,0,0,.32)}
+      .hero-media picture img{object-fit:cover;object-position:center 52%;filter:blur(1.35px) brightness(.78) saturate(.94) contrast(1.08);transform:scale(1.018)}
+      .hero-veil{background:linear-gradient(90deg,rgba(4,7,5,.82) 0%,rgba(4,7,5,.52) 42%,rgba(4,7,5,.20) 76%,rgba(4,7,5,.34) 100%),linear-gradient(0deg,rgba(4,7,5,.64),rgba(4,7,5,.02) 58%,rgba(4,7,5,.30))}
+      .hero-content{max-width:760px;text-shadow:0 2px 18px rgba(0,0,0,.36)}
       .booking-staff-box{margin:0 0 1rem;padding:1rem;border:1px solid var(--line-strong);background:rgba(178,138,70,.055)}
       .booking-staff-box label{display:grid;gap:.45rem;font-weight:800;color:var(--cream)}
       .booking-staff-box select{min-height:52px;padding:.7rem .8rem;border:1px solid var(--line-strong);background:#0b0d0c;color:var(--cream);font:inherit}
       .booking-staff-help{margin:.55rem 0 0;color:var(--muted);font-size:.84rem;line-height:1.45}
-      .booking-capacity-note{display:flex;align-items:flex-start;gap:.55rem;margin:.7rem 0 0;color:var(--brass-soft);font-size:.82rem;line-height:1.45}
-      .booking-capacity-dot{flex:0 0 auto;width:.5rem;height:.5rem;border-radius:50%;margin-top:.32rem;background:currentColor;box-shadow:0 0 0 4px rgba(178,138,70,.10)}
+      .booking-live-note{margin:.55rem 0 0;color:var(--brass-soft);font-size:.8rem}
       .booking-staff-summary{margin:.45rem 0 0;color:var(--brass-soft);font-weight:700}
       #booking-time option{background:#0b0d0c;color:#f3ede2}
-      #other-services[hidden]{display:none!important}
-      @media(max-width:720px){.hero-media picture img{object-position:center center;filter:blur(1.25px) brightness(.74) saturate(.92)}.hero-veil{background:linear-gradient(0deg,rgba(4,7,5,.76),rgba(4,7,5,.34) 70%,rgba(4,7,5,.40))}}
+      #other-services>summary{display:none!important}
+      #other-services{display:block!important;border:0!important;margin:0!important;padding:0!important}
+      #service-grid-secondary{margin-top:var(--space-3,1rem)}
+      @media(max-width:720px){.hero-media picture img{object-position:center center;filter:blur(.9px) brightness(.72) saturate(.92)}.hero-veil{background:linear-gradient(0deg,rgba(4,7,5,.76),rgba(4,7,5,.30) 72%,rgba(4,7,5,.42))}}
     `;
     document.head.appendChild(style);
+  }
+
+  function exposeAllServices() {
+    const details = document.getElementById('other-services');
+    if (!details) return;
+    details.open = true;
+    details.setAttribute('open', '');
+    details.addEventListener('toggle', () => {
+      if (!details.open) details.open = true;
+    });
+  }
+
+  function clearStaticTimes() {
+    const select = document.getElementById('booking-time');
+    if (!select) return;
+    select.textContent = '';
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Scegli prima giorno e barbiere';
+    select.appendChild(option);
+    select.disabled = true;
+    const hint = document.getElementById('time-hint');
+    if (hint) hint.textContent = 'Gli orari vengono caricati dalla disponibilità reale.';
   }
 
   function installStaffPicker() {
@@ -83,12 +106,12 @@
           <option value="giuseppe">Giuseppe</option>
         </select>
       </label>
-      <p class="booking-staff-help">Paolo e Giuseppe hanno due agende indipendenti. Con “Primo disponibile” lo stesso orario resta prenotabile finché almeno uno dei due è libero.</p>
-      <p class="booking-capacity-note"><span class="booking-capacity-dot" aria-hidden="true"></span><span>Slot ogni 30 minuti · massimo 2 clienti nello stesso orario, uno per barbiere. “1 posto” significa che l’altra postazione è già occupata.</span></p>
+      <p class="booking-staff-help">Puoi scegliere Paolo, Giuseppe oppure lasciare al sistema il primo posto disponibile.</p>
+      <p class="booking-live-note">Disponibilità aggiornata in tempo reale · slot ogni 30 minuti.</p>
     `;
     grid.insertAdjacentElement('beforebegin', box);
 
-    box.querySelector('select').addEventListener('change', () => {
+    box.querySelector('select')?.addEventListener('change', () => {
       availabilityByStart.clear();
       const date = document.getElementById('booking-date');
       if (date?.value) date.dispatchEvent(new Event('change', { bubbles: true }));
@@ -102,63 +125,32 @@
     if (!lead) return;
     const slug = selectedStaff();
     lead.textContent = slug === 'any'
-      ? 'Scegli il primo posto libero tra Paolo e Giuseppe. Ogni mezz’ora può avere 2 posti, uno per ciascun barbiere.'
-      : `Stai verificando la disponibilità reale di ${staffName(slug)}.`;
+      ? 'Scegli giorno e orario: il sistema assegna automaticamente il primo barbiere disponibile.'
+      : `Stai visualizzando gli orari realmente disponibili di ${staffName(slug)}.`;
+  }
+
+  function chosenStaffForStart(startsAt) {
+    const slug = selectedStaff();
+    if (slug !== 'any') return slug;
+    return (availabilityByStart.get(startsAt) || [])[0] || '';
   }
 
   function decorateBookingSummary() {
     const summary = document.getElementById('booking-summary');
     if (!summary) return;
-    let item = summary.querySelector('.booking-staff-summary');
-    if (!item) {
-      item = document.createElement('p');
-      item.className = 'booking-staff-summary';
-      summary.appendChild(item);
-    }
-    const slug = selectedStaff();
+    summary.querySelector('.booking-staff-summary')?.remove();
     const startsAt = document.getElementById('booking-time')?.value || '';
-    const candidates = availabilityByStart.get(startsAt) || [];
-    const chosen = slug === 'any' ? candidates[0] : slug;
-    item.textContent = slug === 'any'
-      ? `Barbiere assegnato: ${chosen ? staffName(chosen) : 'primo disponibile al salvataggio'}`
-      : `Barbiere: ${staffName(slug)}`;
+    const chosen = chosenStaffForStart(startsAt);
+    const item = document.createElement('p');
+    item.className = 'booking-staff-summary';
+    item.textContent = chosen ? `Barbiere assegnato: ${staffName(chosen)}` : 'Barbiere: verrà assegnato al salvataggio';
+    summary.appendChild(item);
   }
 
   function observeSummary() {
     const summary = document.getElementById('booking-summary');
-    if (!summary || summary.dataset.staffObserver === '1') return;
-    summary.dataset.staffObserver = '1';
-    new MutationObserver(() => setTimeout(decorateBookingSummary, 0)).observe(summary, { childList: true, subtree: false });
-  }
-
-  function showAllServices() {
-    const primary = document.getElementById('service-grid');
-    const secondary = document.getElementById('service-grid-secondary');
-    const details = document.getElementById('other-services');
-    if (!primary) return;
-    if (secondary) {
-      [...secondary.children].forEach((card) => primary.appendChild(card));
-    }
-    if (details) details.hidden = true;
-  }
-
-  function observeServices() {
-    const primary = document.getElementById('service-grid');
-    const secondary = document.getElementById('service-grid-secondary');
-    const observer = new MutationObserver(() => setTimeout(showAllServices, 0));
-    if (primary) observer.observe(primary, { childList: true });
-    if (secondary) observer.observe(secondary, { childList: true });
-    showAllServices();
-  }
-
-  function purgeLegacyTimeOptions() {
-    const select = document.getElementById('booking-time');
-    if (!select) return;
-    [...select.options].forEach((option) => {
-      const value = String(option.value || '').trim();
-      if (/^\d{2}:\d{2}$/.test(value)) option.remove();
-    });
-    if (!select.options.length) select.appendChild(new Option('Seleziona', ''));
+    if (!summary) return;
+    new MutationObserver(() => setTimeout(decorateBookingSummary, 0)).observe(summary, { childList: true });
   }
 
   async function fetchAvailabilityFor(url, init, staffSlug) {
@@ -189,13 +181,13 @@
     const slots = [...merged.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([startsAt, entry]) => {
-        const preferredOrder = STAFF.map((staff) => staff.slug).filter((slug) => entry.staff.includes(slug));
-        availabilityByStart.set(startsAt, preferredOrder);
+        const order = STAFF.map((staff) => staff.slug).filter((slug) => entry.staff.includes(slug));
+        availabilityByStart.set(startsAt, order);
         const baseLabel = entry.slot.label || new Date(startsAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         return {
           ...entry.slot,
           starts_at: startsAt,
-          label: `${baseLabel} · ${entry.staff.length} ${entry.staff.length === 1 ? 'posto' : 'posti'}`
+          label: `${baseLabel} · ${entry.staff.length === 2 ? '2 posti' : '1 posto'}`
         };
       });
 
@@ -217,8 +209,8 @@
     let lastResponse = null;
 
     for (const staffSlug of candidates) {
-      const body = { ...originalBody, staffSlug };
-      const response = await nativeFetch(input, { ...init, body: JSON.stringify(body) });
+      const nextBody = { ...originalBody, staffSlug };
+      const response = await nativeFetch(input, { ...init, body: JSON.stringify(nextBody) });
       lastResponse = response;
       if (response.ok) {
         const summary = document.querySelector('.booking-staff-summary');
@@ -236,25 +228,32 @@
       const url = new URL(rawUrl, location.href);
       const method = String(init.method || input?.method || 'GET').toUpperCase();
 
-      if (url.pathname.endsWith('/availability') && method === 'GET') {
+      if (url.pathname.endsWith('/api/availability') && method === 'GET') {
         const choice = selectedStaff();
         if (choice === 'any') return mergedAvailability(url.toString(), init);
         availabilityByStart.clear();
-        return (await fetchAvailabilityFor(url.toString(), init, choice)).response;
+        const result = await fetchAvailabilityFor(url.toString(), init, choice);
+        if (result.response.ok && Array.isArray(result.data?.slots)) {
+          result.data.slots.forEach((slot) => {
+            const startsAt = slot.starts_at || slot.startsAt || '';
+            if (startsAt) availabilityByStart.set(startsAt, [choice]);
+          });
+        }
+        return result.response;
       }
 
-      if (url.pathname.endsWith('/appointments') && method === 'POST' && init.body) {
+      if (url.pathname.endsWith('/api/appointments') && method === 'POST' && init.body) {
         return createWithFallback(input, init);
       }
 
-      if (url.pathname.endsWith('/waitlist') && method === 'POST' && init.body) {
-        const body = safeJson(init.body);
+      if (url.pathname.endsWith('/api/waitlist') && method === 'POST' && init.body) {
+        const nextBody = safeJson(init.body);
         const choice = selectedStaff();
         if (choice === 'any') {
-          return jsonResponse({ ok: false, error: { code: 'choose_staff_for_waitlist', message: 'Per entrare in lista d’attesa scegli Paolo oppure Giuseppe.' } }, 400);
+          return jsonResponse({ ok: false, error: { message: 'Per la lista d’attesa scegli Paolo oppure Giuseppe.' } }, 400);
         }
-        body.staffSlug = choice;
-        return nativeFetch(input, { ...init, body: JSON.stringify(body) });
+        nextBody.staffSlug = choice;
+        return nativeFetch(input, { ...init, body: JSON.stringify(nextBody) });
       }
 
       return nativeFetch(input, init);
@@ -263,39 +262,18 @@
 
   function updateStaticCopy() {
     const faq = document.getElementById('faq-confirmation-answer');
-    if (faq) faq.textContent = 'La richiesta occupa subito la postazione assegnata. Dal gestionale la barberia può confermarla, spostarla, annullarla o passarla all’altro barbiere se libero.';
-    const change = document.getElementById('faq-change-answer');
-    if (change) change.textContent = 'Sì. Contatta la barberia: dal gestionale l’appuntamento può essere spostato senza creare doppioni.';
-
+    if (faq) faq.textContent = 'Quando invii la richiesta, il posto viene riservato al barbiere assegnato. La barberia può poi confermarlo, spostarlo o riassegnarlo.';
+    const faqChange = document.getElementById('faq-change-answer');
+    if (faqChange) faqChange.textContent = 'Sì. Contatta la barberia: l’appuntamento può essere spostato senza creare una seconda prenotazione.';
     const consent = document.querySelector('#booking-consent + span');
     if (consent) consent.innerHTML = 'Ho letto l’<a href="privacy.html" target="_blank" rel="noopener noreferrer">informativa privacy</a> e chiedo la registrazione dell’appuntamento.';
-
-    const submit = document.getElementById('booking-submit');
-    if (submit) submit.innerHTML = 'Prenota <span class="btn-arrow" aria-hidden="true">→</span>';
-
-    const paoloSection = document.querySelector('#paolo .paolo-copy');
-    if (paoloSection && !document.getElementById('team-operational-note')) {
-      const note = document.createElement('p');
-      note.id = 'team-operational-note';
-      note.className = 'booking-capacity-note';
-      note.innerHTML = '<span class="booking-capacity-dot" aria-hidden="true"></span><span>In barberia lavora anche Giuseppe: in prenotazione puoi scegliere lui, Paolo oppure il primo disponibile.</span>';
-      paoloSection.appendChild(note);
-    }
   }
 
   installVisualRestyle();
+  exposeAllServices();
+  clearStaticTimes();
   installStaffPicker();
   observeSummary();
-  observeServices();
-  purgeLegacyTimeOptions();
   updateStaticCopy();
   interceptBookingFetches();
-
-  setTimeout(() => {
-    installStaffPicker();
-    observeSummary();
-    showAllServices();
-    purgeLegacyTimeOptions();
-    updateStaticCopy();
-  }, 300);
 })();
