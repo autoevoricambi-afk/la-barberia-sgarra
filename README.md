@@ -10,6 +10,7 @@ Sito premium mobile-first per La Barberia Sgarra: servizi, gallery tagli e preno
 - Notifiche automatiche disattivate in modo silenzioso finché non vengono configurati email/webhook.
 - Deploy finale forzato dopo sostituzione asset hero.
 - Marker finale: verificare dopo il deploy Vercel.
+- Binary hero assets updated.
 
 ## Deploy
 
