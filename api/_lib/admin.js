@@ -1,4 +1,4 @@
-import { getSupabaseConfig, setSupabaseAdminSession, verifySupabaseUser } from './supabase.js';
+import { getSupabaseConfig, setSupabaseAdminSession } from './supabase.js';
 
 const LOCAL_ADMIN_USERNAME = 'paolo';
 const LOCAL_ADMIN_ACTOR_ID = '2c8b7822-278f-4bfe-afca-460c02e02d26';
@@ -13,12 +13,7 @@ export function adminEmails() {
 }
 
 export function isAllowedAdminEmail(email) {
-  const allowed = adminEmails();
-  return allowed.has(String(email || '').trim().toLowerCase());
-}
-
-function isIsolatedTestBackend(config) {
-  return config.url === 'https://project.supabase.co' && adminEmails().has('paolo@example.com');
+  return adminEmails().has(String(email || '').trim().toLowerCase());
 }
 
 async function verifyOpaqueSession(token) {
@@ -45,7 +40,6 @@ async function verifyOpaqueSession(token) {
   return payload?.ok === true ? payload : null;
 }
 
-// Kept for backward imports. New production sessions are opaque DB-backed tokens.
 export function createAdminSessionToken() {
   return null;
 }
@@ -60,14 +54,6 @@ export async function authenticateAdmin(request) {
   if (!match) return null;
 
   const token = String(match[1] || '').trim();
-  const config = getSupabaseConfig();
-
-  if (isIsolatedTestBackend(config)) {
-    const user = await verifySupabaseUser(token);
-    if (!user || !isAllowedAdminEmail(user.email)) return null;
-    return { id: user.id, email: user.email, username: LOCAL_ADMIN_USERNAME };
-  }
-
   const session = await verifyOpaqueSession(token);
   if (!session || String(session.username || '').toLowerCase() !== LOCAL_ADMIN_USERNAME) return null;
 
