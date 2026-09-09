@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sgarra-static-v2';
+const CACHE_VERSION = 'sgarra-static-v3';
 const STATIC_CORE = [
   '/',
   '/index.html',
@@ -42,9 +42,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (['script', 'style'].includes(request.destination)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-      if (response.ok && ['style', 'script', 'image', 'font'].includes(request.destination)) {
+      if (response.ok && ['image', 'font'].includes(request.destination)) {
         const copy = response.clone();
         caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
       }
