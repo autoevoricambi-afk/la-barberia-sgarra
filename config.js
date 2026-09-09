@@ -15,15 +15,12 @@ window.SITE_CONFIG = Object.freeze({
   priceRange: '',
   googleBusinessUrl: 'https://share.google/LM2DalvQ9mnTZB1kh',
 
-  /**
-   * `request`: il flusso prepara WhatsApp senza salvare dati.
-   * `live`: usa API e disponibilità reali, ma soltanto con catalogo e orari approvati.
-   */
+  /** Booking reale: catalogo e orari verificati nel database. */
   booking: {
-    mode: 'request',
+    mode: 'live',
     apiBase: '/api',
     staffSlug: 'paolo-sgarra',
-    serviceCatalogReady: false,
+    serviceCatalogReady: true,
     privacyVersion: '2026-09-01',
     bookingHorizonDays: 45
   },
@@ -47,7 +44,6 @@ window.SITE_CONFIG = Object.freeze({
   instagramUrl: 'https://www.instagram.com/la_barberia_sgarra/',
   instagramHandle: '@la_barberia_sgarra',
 
-  /** Orari: non mostrare in UI finché openingHoursApproved !== true */
   openingHoursApproved: true,
   openingHours: {
     verified: true,
@@ -65,35 +61,32 @@ window.SITE_CONFIG = Object.freeze({
     ]
   },
 
-  /** Bio pubblica: se false → copy neutro sicuro, nessuna nota editoriale */
   paoloBioApproved: false,
   barber: {
     name: 'Paolo Sgarra',
     bioApproved: false,
-    bio:
-      'Ogni taglio parte dall’ascolto. Forma, proporzioni e dettagli vengono costruiti sulla persona, non copiati da una fotografia.',
-    bioNeutral:
-      'Dietro ogni lavoro c’è Paolo Sgarra, il barbiere della Barberia Sgarra ad Andria.'
+    bio: 'Ogni taglio parte dall’ascolto. Forma, proporzioni e dettagli vengono costruiti sulla persona, non copiati da una fotografia.',
+    bioNeutral: 'Dietro ogni lavoro c’è Paolo Sgarra, il barbiere della Barberia Sgarra ad Andria.'
   },
 
-  /** Media locale: se false non usare primi piani di tagli come “interno” */
-  studioMediaApproved: false,
-  /** Media posizione: se false sezione tipografica senza foto non pertinenti */
+  studioMediaApproved: true,
   locationMediaApproved: false,
 
+  /** Fallback coerente con il listino reale; in live viene poi aggiornato dall’API. */
   services: {
     primary: [
-      { id: 'taglio-uomo', label: 'Taglio uomo', desc: 'Forma e rifinitura.' },
-      { id: 'fade', label: 'Fade', desc: 'Transizione pulita.' },
-      { id: 'taglio-barba', label: 'Taglio + barba', desc: 'Il servizio completo.' },
-      { id: 'barba', label: 'Barba', desc: 'Contorni e proporzioni.' },
-      { id: 'cambio-look', label: 'Cambio look', desc: 'Un taglio costruito da zero.' }
+      { id: 'taglio', label: 'Taglio', desc: 'Taglio uomo · 30 min · €12,00' },
+      { id: 'taglio-shampoo', label: 'Taglio + shampoo', desc: 'Taglio con shampoo · 30 min · €15,00' },
+      { id: 'taglio-barba', label: 'Taglio + barba', desc: 'Taglio e barba · 30 min · €17,00' },
+      { id: 'taglio-baby', label: 'Taglio baby', desc: 'Taglio bambino · 30 min · €10,00' },
+      { id: 'completo', label: 'Completo', desc: 'Servizio completo · 30 min · €23,00' }
     ],
     secondary: [
-      { id: 'rasatura', label: 'Rasatura', desc: 'Finitura netta.' },
-      { id: 'shampoo', label: 'Shampoo', desc: 'Da abbinare al taglio.' },
-      { id: 'doppio-shampoo', label: 'Doppio shampoo', desc: 'Lavaggio più completo.' },
-      { id: 'shampoo-styling', label: 'Shampoo + styling', desc: 'Chiusura con prodotto.' }
+      { id: 'barba', label: 'Barba', desc: 'Servizio barba · 30 min · €6,00' },
+      { id: 'barba-old-school', label: 'Barba old school', desc: 'Servizio barba old school · 30 min · €9,00' },
+      { id: 'sopracciglia', label: 'Sopracciglia', desc: 'Sistemazione sopracciglia · 30 min · €3,00' },
+      { id: 'shampoo', label: 'Shampoo', desc: 'Shampoo · 30 min · €5,00' },
+      { id: 'pettinata', label: 'Pettinata', desc: 'Pettinata e styling · 30 min · €3,00' }
     ]
   },
 
@@ -112,11 +105,10 @@ window.SITE_CONFIG = Object.freeze({
     hero: {
       mode: 'image',
       poster: 'assets/posters/hero-poster.webp',
-      imageSrcset:
-        'assets/images/hero/hero-640.webp 640w, assets/images/hero/hero-960.webp 960w',
-      imageFallback: 'assets/images/hero/hero-fallback.jpg',
-      width: 640,
-      height: 837,
+      imageSrcset: 'assets/images/studio/interno-01.webp',
+      imageFallback: 'assets/images/studio/interno-01.jpg',
+      width: 960,
+      height: 1280,
       videoMp4: '',
       videoWebm: ''
     },
@@ -126,22 +118,15 @@ window.SITE_CONFIG = Object.freeze({
       videoWebm: '',
       poster: 'assets/posters/studio-poster.webp',
       stills: [
-        { src: 'assets/images/studio/interno-01.webp', alt: 'Interno della barberia, postazione e dettagli' },
-        { src: 'assets/images/studio/interno-02.webp', alt: 'Postazione con luci e prodotti' },
-        { src: 'assets/images/studio/interno-03.webp', alt: 'Cliente e ambiente del negozio' }
+        { src: 'assets/images/studio/interno-01.webp', alt: 'Interno della barberia rinnovata' },
+        { src: 'assets/images/studio/interno-02.webp', alt: 'Postazioni e illuminazione della barberia' },
+        { src: 'assets/images/studio/interno-03.webp', alt: 'Ambiente della Barberia Sgarra' }
       ]
     }
   },
 
   instagramMedia: [
-    {
-      type: 'reel',
-      url: '',
-      localVideo: '',
-      poster: '',
-      title: '',
-      enabled: false
-    }
+    { type: 'reel', url: '', localVideo: '', poster: '', title: '', enabled: false }
   ],
 
   reviewsEnabled: false,
@@ -153,3 +138,11 @@ window.SITE_CONFIG = Object.freeze({
   debug: false,
   showCookieBannerWhenTracking: true
 });
+
+/* Carica l’estensione operativa due-barbieri prima dell’app principale. */
+(function loadTwoBarberEnhancements() {
+  var script = document.createElement('script');
+  script.src = 'site-enhancements.js?v=20260909-3';
+  script.async = false;
+  document.head.appendChild(script);
+})();
