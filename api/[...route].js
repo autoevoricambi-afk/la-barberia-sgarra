@@ -11,6 +11,7 @@ import adminBlocks from './_routes/admin/blocks.js';
 import adminCatalog from './_routes/admin/catalog.js';
 import adminInventory from './_routes/admin/inventory.js';
 import adminMetrics from './_routes/admin/metrics.js';
+import adminStaff from './_routes/admin/staff.js';
 import adminWaitlist from './_routes/admin/waitlist.js';
 import processOutbox from './_routes/cron/process-outbox.js';
 import { sendJson } from './_lib/http.js';
@@ -30,6 +31,7 @@ const handlers = new Map([
   ['admin/inventory', adminInventory],
   ['admin/waitlist', adminWaitlist],
   ['admin/metrics', adminMetrics],
+  ['admin/staff', adminStaff],
   ['cron/process-outbox', processOutbox]
 ]);
 
