@@ -27,11 +27,13 @@
     <section class="admin-login" id="login-panel" aria-labelledby="login-title">
       <p class="eyebrow">Area riservata</p>
       <h1 id="login-title">Agenda di Paolo</h1>
-      <p>Inserisci l’indirizzo autorizzato. Riceverai un link di accesso senza password.</p>
+      <p>Accesso riservato al titolare. Inserisci utente e password.</p>
       <form id="login-form" class="admin-login-form">
-        <label for="admin-email">Email</label>
-        <input id="admin-email" name="email" type="email" autocomplete="email" required />
-        <button class="button button-primary" type="submit">Invia link sicuro</button>
+        <label for="admin-email">Utente</label>
+        <input id="admin-email" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+        <label for="admin-password">Password</label>
+        <input id="admin-password" name="password" type="password" autocomplete="current-password" minlength="8" required />
+        <button class="button button-primary" type="submit">Accedi al gestionale</button>
       </form>
       <p class="admin-status" id="login-status" role="status" aria-live="polite"></p>
     </section>
@@ -215,6 +217,36 @@
       <p class="admin-status" id="edit-status" role="status" aria-live="polite"></p>
     </form>
   </dialog>
+  <script>
+    (function () {
+      var form = document.getElementById('login-form');
+      var status = document.getElementById('login-status');
+      if (!form || !status) return;
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        var username = String(document.getElementById('admin-email').value || '').trim();
+        var password = String(document.getElementById('admin-password').value || '');
+        status.textContent = 'Accesso in corso…';
+        try {
+          var response = await fetch('/api/admin/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ username: username, password: password })
+          });
+          var data = await response.json().catch(function () { return {}; });
+          if (!response.ok || !data.session || !data.session.accessToken) {
+            throw new Error(data.error && data.error.message ? data.error.message : 'Accesso non riuscito.');
+          }
+          localStorage.setItem('sgarra_admin_session_v1', JSON.stringify(data.session));
+          status.textContent = 'Accesso riuscito.';
+          window.location.replace('/admin');
+        } catch (error) {
+          status.textContent = error.message || 'Accesso non riuscito.';
+        }
+      }, true);
+    })();
+  </script>
   <script type="module" src="admin.js"></script>
 </body>
 </html>
