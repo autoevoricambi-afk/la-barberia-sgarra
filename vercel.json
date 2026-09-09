@@ -83,15 +83,5 @@
       "path": "/api/cron/process-outbox",
       "schedule": "0 6 * * *"
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/admin/:path*",
-      "destination": "/api/public-config?proxyRoute=admin/:path*"
-    },
-    {
-      "source": "/api/cron/:path*",
-      "destination": "/api/public-config?proxyRoute=cron/:path*"
-    }
   ]
 }
