@@ -24,6 +24,10 @@
     return match ? match.display_name : (slug === 'paolo-sgarra' ? 'Paolo Sgarra' : slug === 'giuseppe' ? 'Giuseppe' : slug);
   }
 
+  function safeJson(text) {
+    try { return JSON.parse(text || '{}'); } catch { return {}; }
+  }
+
   async function adminRequest(path, options = {}) {
     const response = await originalFetch(path, {
       ...options,
@@ -56,6 +60,8 @@
       .staff-hours-head{display:flex;align-items:center;justify-content:space-between;gap:.8rem;margin-bottom:.65rem}
       .staff-hours-head h4{margin:0;font:400 1.45rem/1 var(--font-display);color:var(--cream)}
       .staff-hours-note{margin:.25rem 0 .75rem;color:var(--muted);font-size:.8rem}
+      .staff-capacity-note{margin:.35rem 0 0;color:var(--brass-soft);font-size:.8rem}
+      .staff-assignment-note{margin-top:.45rem;color:var(--muted);font-size:.78rem}
       @media(max-width:520px){.staff-hours-head{align-items:flex-start;flex-direction:column}.staff-capacity{align-items:flex-start;flex-direction:column}}
     `;
     document.head.appendChild(style);
@@ -68,6 +74,7 @@
       label.innerHTML = 'Barbiere<select id="new-staff" required><option value="paolo-sgarra">Paolo Sgarra</option><option value="giuseppe">Giuseppe</option></select>';
       newGrid.appendChild(label);
     }
+
     const blockGrid = document.querySelector('#block-form .form-grid');
     if (blockGrid && !document.getElementById('block-staff')) {
       const label = document.createElement('label');
@@ -163,7 +170,7 @@
           transfer.textContent = `Passa a ${targetName.replace(' Sgarra', '')}`;
           transfer.title = `Mantiene giorno e orario e assegna il cliente a ${targetName}, solo se quella postazione è libera.`;
           transfer.addEventListener('click', () => reassign(assignment, target));
-          controls.appendChild(transfer);
+          controls.insertBefore(transfer, controls.querySelector('button:last-child'));
         }
       }
     });
@@ -206,7 +213,22 @@
     }
   }
 
+  function decorateBlocks() {
+    const byId = new Map(state.blocks.map((item) => [item.id, item]));
+    const cards = [...document.querySelectorAll('#block-list .block-card')];
+    cards.forEach((card, index) => {
+      const block = state.blocks[index] || byId.get(card.dataset.blockId);
+      if (!block || card.querySelector('.staff-pill')) return;
+      const slug = block.staff?.slug || state.staff.find((item) => item.id === block.staff_id)?.slug || '';
+      const pill = document.createElement('span');
+      pill.className = 'staff-pill';
+      pill.textContent = staffLabel(slug);
+      card.appendChild(pill);
+    });
+  }
+
   const weekdays = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+
   function hourRow(item, staffSlug) {
     const row = document.createElement('div');
     row.className = 'settings-row hour-row staff-hour-row';
@@ -214,7 +236,8 @@
     row.innerHTML = `
       <label>Giorno<select data-field="weekday">${weekdays.map((name, index) => `<option value="${index}" ${Number(item.weekday) === index ? 'selected' : ''}>${name}</option>`).join('')}</select></label>
       <label>Apre<input data-field="opens" type="time" value="${String(item.opens_at || '08:30').slice(0, 5)}" required /></label>
-      <label>Chiude<input data-field="closes" type="time" value="${String(item.closes_at || '13:00').slice(0, 5)}" required /></label>`;
+      <label>Chiude<input data-field="closes" type="time" value="${String(item.closes_at || '13:00').slice(0, 5)}" required /></label>
+    `;
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'mini-button danger';
@@ -247,22 +270,93 @@
       head.append(title, add);
       const note = document.createElement('p');
       note.className = 'staff-hours-note';
-      note.textContent = 'Agenda indipendente: un cliente qui non chiude lo stesso orario dell’altro barbiere.';
+      note.textContent = 'Questa agenda è indipendente: un cliente qui non chiude lo stesso orario dell’altro barbiere.';
       state.hours.filter((item) => item.staff_id === staff.id).forEach((item) => rows.appendChild(hourRow(item, staff.slug)));
       section.append(head, note, rows);
       root.appendChild(section);
     });
     const addHour = document.getElementById('add-hour');
     if (addHour) addHour.hidden = true;
+    const heading = root.previousElementSibling;
+    if (heading && !heading.querySelector('.staff-capacity-note')) {
+      const note = document.createElement('p');
+      note.className = 'staff-capacity-note';
+      note.textContent = 'Intervallo consigliato e attuale: 30 minuti. Con Paolo + Giuseppe la capacità è 2 clienti nello stesso orario, uno per postazione.';
+      heading.appendChild(note);
+    }
+  }
+
+  function collectServices() {
+    return [...document.querySelectorAll('.service-row')].map((row, index) => ({
+      slug: row.querySelector('[data-field="slug"]')?.value || '',
+      name: row.querySelector('[data-field="name"]')?.value || '',
+      description: '',
+      durationMinutes: Number(row.querySelector('[data-field="duration"]')?.value || 30),
+      priceCents: row.querySelector('[data-field="price"]')?.value === '' ? null : Math.round(Number(row.querySelector('[data-field="price"]')?.value || 0) * 100),
+      bufferBeforeMinutes: Number(row.querySelector('[data-field="before"]')?.value || 0),
+      bufferAfterMinutes: Number(row.querySelector('[data-field="after"]')?.value || 0),
+      active: !!row.querySelector('[data-field="active"]')?.checked,
+      sortOrder: index
+    }));
+  }
+
+  function collectStaffHours() {
+    return state.staff.map((staff) => ({
+      staffSlug: staff.slug,
+      hours: [...document.querySelectorAll(`.staff-hour-row[data-staff-slug="${staff.slug}"]`)].map((row) => ({
+        weekday: Number(row.querySelector('[data-field="weekday"]')?.value),
+        opensAt: row.querySelector('[data-field="opens"]')?.value || '',
+        closesAt: row.querySelector('[data-field="closes"]')?.value || '',
+        active: true
+      }))
+    }));
+  }
+
+  function locationSettings() {
+    return {
+      minNoticeMinutes: Number(document.getElementById('setting-notice')?.value || 120),
+      bookingHorizonDays: Number(document.getElementById('setting-horizon')?.value || 45),
+      slotIntervalMinutes: Number(document.getElementById('setting-interval')?.value || 30),
+      publicBookingEnabled: !!document.getElementById('setting-booking-enabled')?.checked,
+      reviewUrl: document.getElementById('setting-review-url')?.value || '',
+      cancellationStrikeLimit: Number(document.getElementById('setting-strike-limit')?.value || 3),
+      depositAmountCents: Math.round(Number(document.getElementById('setting-deposit')?.value || 0) * 100),
+      depositPaymentUrl: document.getElementById('setting-deposit-url')?.value || ''
+    };
+  }
+
+  async function saveEnhancedSettings(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const status = document.getElementById('settings-status');
+    if (!state.staff.length) {
+      if (status) status.textContent = 'Operatori non caricati. Premi Aggiorna e riprova.';
+      return;
+    }
+    if (status) status.textContent = 'Salvataggio orari di Paolo e Giuseppe…';
+    try {
+      const location = locationSettings();
+      if (location.slotIntervalMinutes !== 30) {
+        const proceed = confirm(`L’intervallo è impostato a ${location.slotIntervalMinutes} minuti. Per il flusso concordato consigliamo 30 minuti. Vuoi salvare comunque?`);
+        if (!proceed) return;
+      }
+      await adminRequest('/api/admin/staff', {
+        method: 'PUT',
+        body: JSON.stringify({ services: collectServices(), location, staffHours: collectStaffHours() })
+      });
+      if (status) status.textContent = 'Configurazione salvata per entrambi i barbieri.';
+      await refreshStaffState();
+    } catch (error) {
+      if (status) status.textContent = error.message;
+    }
   }
 
   async function refreshStaffState() {
-    if (state.refreshing || !token()) return;
+    if (!token() || state.refreshing) return;
     state.refreshing = true;
     try {
-      const date = document.getElementById('agenda-date')?.value;
-      const range = dateRange(date);
-      const data = await adminRequest(`/api/admin/staff?from=${range.from}&to=${range.to}`);
+      const range = dateRange(document.getElementById('agenda-date')?.value);
+      const data = await adminRequest(`/api/admin/staff?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`);
       state.staff = data.staff || [];
       state.hours = data.hours || [];
       state.assignments = data.assignments || [];
@@ -270,57 +364,70 @@
       populateSelectors();
       renderStaffHours();
       decorateAgenda();
+      decorateBlocks();
     } catch (error) {
-      const status = document.getElementById('agenda-status');
-      if (status && token()) status.textContent = `Operatori: ${error.message}`;
+      const agendaStatus = document.getElementById('agenda-status');
+      if (agendaStatus && !agendaStatus.textContent) agendaStatus.textContent = error.message;
     } finally {
       state.refreshing = false;
     }
   }
 
-  function interceptAdminMutations() {
+  function interceptFetch() {
     window.fetch = async function(input, init = {}) {
-      const rawUrl = typeof input === 'string' ? input : (input?.url || '');
-      const url = new URL(rawUrl, location.href);
-      const method = String(init.method || input?.method || 'GET').toUpperCase();
-      let body = null;
-      if (init.body && typeof init.body === 'string') {
-        try { body = JSON.parse(init.body); } catch { body = null; }
-      }
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      const method = String(init.method || (input && input.method) || 'GET').toUpperCase();
 
-      if (url.pathname.endsWith('/api/admin/appointments') && method === 'POST' && body) {
-        body.staffSlug = document.getElementById('new-staff')?.value || body.staffSlug || 'paolo-sgarra';
+      if (url.includes('/api/admin/appointments') && method === 'POST' && init.body) {
+        const body = safeJson(init.body);
+        const select = document.getElementById('new-staff');
+        if (select && !body.staffSlug) body.staffSlug = select.value;
         init = { ...init, body: JSON.stringify(body) };
       }
-      if (url.pathname.endsWith('/api/admin/blocks') && method === 'POST' && body) {
-        const staff = document.getElementById('block-staff')?.value;
-        if (staff && staff !== 'both') {
-          body.staffSlug = staff;
-          init = { ...init, body: JSON.stringify(body) };
+
+      if (url.includes('/api/admin/blocks') && method === 'POST' && init.body) {
+        const body = safeJson(init.body);
+        const select = document.getElementById('block-staff');
+        const chosen = select?.value || 'paolo-sgarra';
+        if (chosen === 'both') {
+          const requests = ['paolo-sgarra', 'giuseppe'].map((staffSlug) => originalFetch(input, { ...init, body: JSON.stringify({ ...body, staffSlug }) }));
+          const responses = await Promise.all(requests);
+          const payloads = await Promise.all(responses.map((response) => response.clone().json().catch(() => ({}))));
+          const failedIndex = responses.findIndex((response) => !response.ok);
+          if (failedIndex >= 0) {
+            return new Response(JSON.stringify(payloads[failedIndex]), { status: responses[failedIndex].status, headers: { 'Content-Type': 'application/json' } });
+          }
+          return new Response(JSON.stringify({ ok: true, blocks: payloads.map((item) => item.block) }), { status: 201, headers: { 'Content-Type': 'application/json' } });
         }
+        body.staffSlug = chosen;
+        init = { ...init, body: JSON.stringify(body) };
       }
+
       const response = await originalFetch(input, init);
-      if (url.pathname.includes('/api/admin/') && response.ok && method !== 'GET') setTimeout(refreshStaffState, 400);
+      if ((url.includes('/api/admin/appointments') || url.includes('/api/admin/blocks')) && method === 'GET') {
+        setTimeout(refreshStaffState, 60);
+      }
       return response;
     };
   }
 
   function observeAgenda() {
-    const list = document.getElementById('agenda-list');
-    if (!list) return;
-    new MutationObserver(() => setTimeout(decorateAgenda, 0)).observe(list, { childList: true });
+    const agenda = document.getElementById('agenda-list');
+    const blocks = document.getElementById('block-list');
+    if (agenda) new MutationObserver(() => setTimeout(decorateAgenda, 0)).observe(agenda, { childList: true });
+    if (blocks) new MutationObserver(() => setTimeout(decorateBlocks, 0)).observe(blocks, { childList: true });
   }
 
-  function start() {
-    installStyles();
-    injectStaffSelectors();
-    installAgendaControls();
-    interceptAdminMutations();
-    observeAgenda();
-    document.getElementById('refresh-all')?.addEventListener('click', () => setTimeout(refreshStaffState, 300));
-    document.getElementById('agenda-date')?.addEventListener('change', () => setTimeout(refreshStaffState, 300));
-    setTimeout(refreshStaffState, 300);
-  }
+  installStyles();
+  injectStaffSelectors();
+  installAgendaControls();
+  interceptFetch();
+  observeAgenda();
 
-  start();
+  const settingsForm = document.getElementById('settings-form');
+  if (settingsForm) settingsForm.addEventListener('submit', saveEnhancedSettings, true);
+  document.getElementById('agenda-date')?.addEventListener('change', () => setTimeout(refreshStaffState, 120));
+  document.getElementById('refresh-all')?.addEventListener('click', () => setTimeout(refreshStaffState, 350));
+
+  setTimeout(refreshStaffState, 250);
 })();

@@ -2,6 +2,7 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { getSupabaseConfig, verifySupabaseUser } from './supabase.js';
 
 const LOCAL_ADMIN_USERNAME = 'paolo';
+const LOCAL_ADMIN_ACTOR_ID = '2c8b7822-278f-4bfe-afca-460c02e02d26';
 const LOCAL_SESSION_VERSION = 'sgarra-admin-v1';
 
 export function adminEmails() {
@@ -94,13 +95,12 @@ export async function authenticateAdmin(request) {
   if (localSession) {
     const allowed = [...adminEmails()];
     return {
-      id: 'local-paolo-admin',
+      id: LOCAL_ADMIN_ACTOR_ID,
       username: LOCAL_ADMIN_USERNAME,
       email: allowed.length === 1 ? allowed[0] : ''
     };
   }
 
-  // Compatibilità con eventuali sessioni Supabase già aperte in precedenza.
   const user = await verifySupabaseUser(match[1]);
   if (!user || !isAllowedAdminEmail(user.email)) return null;
   return { id: user.id, email: user.email };
