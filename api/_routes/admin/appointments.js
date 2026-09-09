@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
-  canTransition, isValidUuid, normalizeText,
+  isValidUuid, normalizeText,
   validateAdminBookingPayload, validateReschedulePayload
 } from '../../../platform/booking-domain.mjs';
 import { authenticateAdmin } from '../../_lib/admin.js';
@@ -8,6 +8,18 @@ import { readJsonBody, rejectMethod, sendJson } from '../../_lib/http.js';
 import { logError, logInfo, requestContext } from '../../_lib/logging.js';
 import { processPendingOutboxForReference } from '../../_lib/notifications.js';
 import { supabaseRequest } from '../../_lib/supabase.js';
+
+const TRANSITIONS = Object.freeze({
+  pending: new Set(['confirmed', 'cancelled_by_customer', 'cancelled_by_shop']),
+  confirmed: new Set(['arrived', 'in_progress', 'completed', 'cancelled_by_customer', 'cancelled_by_shop', 'no_show']),
+  arrived: new Set(['in_progress', 'completed', 'cancelled_by_shop']),
+  in_progress: new Set(['completed', 'cancelled_by_shop']),
+  completed: new Set(['reopen'])
+});
+
+function canTransition(from, to) {
+  return TRANSITIONS[from]?.has(to) === true;
+}
 
 function validDate(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
@@ -24,13 +36,18 @@ async function requireAdmin(request, response) {
   }
 }
 
+async function flushNotification(reference, context, event) {
+  try { await processPendingOutboxForReference(reference); }
+  catch (error) { logError(context, `${event}_notification_deferred`, error); }
+}
+
 async function listAppointments(request, response, context) {
   const from = validDate(request.query?.from) ? request.query.from : new Date().toISOString().slice(0, 10);
   const toDate = new Date(`${from}T00:00:00Z`);
   toDate.setUTCDate(toDate.getUTCDate() + 7);
   const to = validDate(request.query?.to) ? request.query.to : toDate.toISOString().slice(0, 10);
   const params = new URLSearchParams({
-    select: 'id,reference,status,starts_at,ends_at,notes,source,created_at,deposit_required,deposit_amount_cents,deposit_status,late_cancellation,customers(name,phone_normalized,email,completed_visits,late_cancellations,no_show_count,deposit_required),appointment_items(service_name_snapshot,service_id)',
+    select: 'id,reference,status,staff_id,starts_at,ends_at,notes,source,created_at,deposit_required,deposit_amount_cents,deposit_status,late_cancellation,customers(name,phone_normalized,email,completed_visits,late_cancellations,no_show_count,deposit_required),appointment_items(service_name_snapshot,service_id)',
     starts_at: `gte.${from}T00:00:00+00:00`,
     order: 'starts_at.asc'
   });
@@ -46,10 +63,7 @@ async function listAppointments(request, response, context) {
 }
 
 async function createAppointment(body, admin, response, context) {
-  const validation = validateAdminBookingPayload({
-    ...body,
-    idempotencyKey: body?.idempotencyKey || `admin_${randomUUID()}`
-  });
+  const validation = validateAdminBookingPayload({ ...body, idempotencyKey: body?.idempotencyKey || `admin_${randomUUID()}` });
   if (!validation.ok) return sendJson(response, 400, { ok: false, error: { code: 'invalid_booking', message: 'Controlla i dati inseriti.', fields: validation.errors } });
   try {
     const created = await supabaseRequest('/rest/v1/rpc/admin_create_booking', {
@@ -67,9 +81,7 @@ async function createAppointment(body, admin, response, context) {
       }
     });
     const appointment = Array.isArray(created) ? created[0] : created;
-    try { await processPendingOutboxForReference(appointment?.reference); }
-    catch (notificationError) { logError(context, 'admin_booking_notification_deferred', notificationError); }
-    logInfo(context, 'admin_booking_created', { source: validation.value.source });
+    await flushNotification(appointment?.reference, context, 'admin_booking');
     return sendJson(response, 201, { ok: true, appointment });
   } catch (error) {
     logError(context, 'admin_booking_create_failed', error);
@@ -92,9 +104,7 @@ async function rescheduleAppointment(body, admin, response, context) {
       }
     });
     const appointment = Array.isArray(updated) ? updated[0] : updated;
-    try { await processPendingOutboxForReference(appointment?.reference); }
-    catch (notificationError) { logError(context, 'admin_reschedule_notification_deferred', notificationError); }
-    logInfo(context, 'admin_booking_rescheduled');
+    await flushNotification(appointment?.reference, context, 'admin_reschedule');
     return sendJson(response, 200, { ok: true, appointment });
   } catch (error) {
     logError(context, 'admin_booking_reschedule_failed', error);
@@ -111,7 +121,6 @@ async function updateNotes(body, response, context) {
     const rows = await supabaseRequest(`/rest/v1/appointments?id=eq.${encodeURIComponent(appointmentId)}`, {
       method: 'PATCH', body: { notes }, headers: { Prefer: 'return=representation' }
     });
-    logInfo(context, 'admin_booking_notes_updated');
     return sendJson(response, 200, { ok: true, appointment: Array.isArray(rows) ? rows[0] : rows });
   } catch (error) {
     logError(context, 'admin_booking_notes_failed', error);
@@ -134,13 +143,15 @@ async function transitionAppointment(body, admin, response, context) {
       body: { p_appointment_id: appointmentId, p_to_status: toStatus, p_actor_id: admin.id, p_reason: reason || null }
     });
     const appointment = Array.isArray(updated) ? updated[0] : updated;
-    try { await processPendingOutboxForReference(appointment?.reference); }
-    catch (notificationError) { logError(context, 'admin_transition_notification_deferred', notificationError); }
-    logInfo(context, 'admin_booking_transitioned', { toStatus });
+    await flushNotification(appointment?.reference, context, 'admin_transition');
     return sendJson(response, 200, { ok: true, appointment });
   } catch (error) {
     logError(context, 'admin_booking_transition_failed', error);
-    return sendJson(response, 502, { ok: false, error: { code: 'update_failed', message: 'Aggiornamento non riuscito.' } });
+    const conflict = /slot_unavailable/i.test(`${error?.message} ${error?.details}`);
+    return sendJson(response, conflict ? 409 : 502, {
+      ok: false,
+      error: { code: conflict ? 'slot_unavailable' : 'update_failed', message: conflict ? 'Lo slot non è più disponibile.' : 'Aggiornamento non riuscito.' }
+    });
   }
 }
 
@@ -155,9 +166,7 @@ async function updateDeposit(body, admin, response, context) {
       method: 'POST', body: { p_appointment_id: appointmentId, p_status: status, p_actor_id: admin.id }
     });
     const appointment = Array.isArray(result) ? result[0] : result;
-    try { await processPendingOutboxForReference(appointment?.reference); }
-    catch (notificationError) { logError(context, 'deposit_notification_deferred', notificationError); }
-    logInfo(context, 'deposit_status_updated', { status });
+    await flushNotification(appointment?.reference, context, 'deposit');
     return sendJson(response, 200, { ok: true, appointment });
   } catch (error) {
     logError(context, 'deposit_status_failed', error);
