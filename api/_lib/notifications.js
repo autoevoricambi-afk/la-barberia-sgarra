@@ -22,6 +22,10 @@ function notificationConfig() {
   };
 }
 
+function notificationsDisabled(config) {
+  return (!config.resendKey || !config.from || !config.barberEmail) && !config.webhookUrl;
+}
+
 async function appointmentDetails(appointmentId) {
   const params = new URLSearchParams({
     id: `eq.${appointmentId}`,
@@ -110,8 +114,8 @@ async function sendWebhook(config, event, appointment) {
 
 export async function processOutboxEvent(event) {
   const config = notificationConfig();
-  if ((!config.resendKey || !config.from || !config.barberEmail) && !config.webhookUrl) {
-    throw new Error('notification_channel_not_configured');
+  if (notificationsDisabled(config)) {
+    return [{ skipped: true, channel: 'none', reason: 'notification_channel_not_configured' }];
   }
   const appointment = event.appointment_id ? await appointmentDetails(event.appointment_id) : null;
   if (event.appointment_id && !appointment) throw new Error('notification_appointment_not_found');
@@ -119,7 +123,7 @@ export async function processOutboxEvent(event) {
     sendResendEmail(config, event, appointment),
     sendWebhook(config, event, appointment)
   ]);
-  if (results.every((result) => result?.skipped)) throw new Error('notification_recipient_not_configured');
+  if (results.every((result) => result?.skipped)) return results;
   if (event.event_type === 'waitlist.slot_available' && event.payload?.waitlistId) {
     await supabaseRequest(`/rest/v1/waitlist_entries?id=eq.${encodeURIComponent(event.payload.waitlistId)}`, {
       method: 'PATCH',
