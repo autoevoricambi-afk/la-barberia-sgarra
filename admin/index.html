@@ -26,7 +26,7 @@
   <main id="admin-main" class="admin-main">
     <section class="admin-login" id="login-panel" aria-labelledby="login-title">
       <p class="eyebrow">Area riservata</p>
-      <h1 id="login-title">Agenda di Paolo</h1>
+      <h1 id="login-title">Gestionale Barberia</h1>
       <p>Accesso riservato al titolare. Inserisci utente e password.</p>
       <form id="login-form" class="admin-login-form">
         <label for="admin-email">Utente</label>
@@ -221,6 +221,7 @@
     (function () {
       var form = document.getElementById('login-form');
       var status = document.getElementById('login-status');
+      var nativeLoginFetch = window.fetch.bind(window);
       if (!form || !status) return;
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
@@ -229,7 +230,7 @@
         var password = String(document.getElementById('admin-password').value || '');
         status.textContent = 'Accesso in corso…';
         try {
-          var response = await fetch('/api/admin/auth', {
+          var response = await nativeLoginFetch('/api/admin/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ username: username, password: password })
