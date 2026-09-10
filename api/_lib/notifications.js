@@ -16,7 +16,7 @@ function formatRome(value) {
 const DEFAULT_FROM_EMAIL = 'La Barberia Sgarra <prenotazioni@mail.labarberiasgarra.it>';
 // Destinatario provvisorio: verrà sostituito da BARBER_NOTIFICATION_EMAIL su Vercel
 // quando sarà pronto l'indirizzo definitivo sul dominio, senza toccare il codice.
-const DEFAULT_BARBER_NOTIFICATION_EMAIL = 'sgarra.paolo98@libero.it';
+const DEFAULT_BARBER_NOTIFICATION_EMAIL = 'sgarra.paolo@libero.it';
 
 function notificationConfig() {
   return {
