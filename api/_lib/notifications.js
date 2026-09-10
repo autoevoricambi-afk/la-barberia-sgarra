@@ -12,11 +12,17 @@ function formatRome(value) {
   }).format(new Date(value));
 }
 
+// Mittente fisso sul dominio verificato Resend: non cambia, va bene nel codice.
+const DEFAULT_FROM_EMAIL = 'La Barberia Sgarra <prenotazioni@mail.labarberiasgarra.it>';
+// Destinatario provvisorio: verrà sostituito da BARBER_NOTIFICATION_EMAIL su Vercel
+// quando sarà pronto l'indirizzo definitivo sul dominio, senza toccare il codice.
+const DEFAULT_BARBER_NOTIFICATION_EMAIL = 'sgarra.paolo98@libero.it';
+
 function notificationConfig() {
   return {
     resendKey: String(process.env.RESEND_API_KEY || '').trim(),
-    from: String(process.env.NOTIFICATION_FROM_EMAIL || '').trim(),
-    barberEmail: String(process.env.BARBER_NOTIFICATION_EMAIL || '').trim(),
+    from: String(process.env.NOTIFICATION_FROM_EMAIL || DEFAULT_FROM_EMAIL).trim(),
+    barberEmail: String(process.env.BARBER_NOTIFICATION_EMAIL || DEFAULT_BARBER_NOTIFICATION_EMAIL).trim(),
     webhookUrl: String(process.env.BOOKING_NOTIFICATION_WEBHOOK_URL || '').trim(),
     webhookSecret: String(process.env.BOOKING_NOTIFICATION_WEBHOOK_SECRET || '').trim()
   };
@@ -29,7 +35,7 @@ function notificationsDisabled(config) {
 async function appointmentDetails(appointmentId) {
   const params = new URLSearchParams({
     id: `eq.${appointmentId}`,
-    select: 'id,reference,status,starts_at,ends_at,notes,source,deposit_required,deposit_amount_cents,deposit_status,customers(name,phone_normalized,email),appointment_items(service_name_snapshot)',
+    select: 'id,reference,status,starts_at,ends_at,notes,source,deposit_required,deposit_amount_cents,deposit_status,customers(name,phone_normalized,email),appointment_items(service_name_snapshot),staff(display_name)',
     limit: '1'
   });
   const rows = await supabaseRequest(`/rest/v1/appointments?${params.toString()}`);
@@ -61,6 +67,23 @@ function notificationCopy(event, appointment) {
   return copies[event.event_type] || ['Aggiornamento Barberia Sgarra', 'C’è un nuovo aggiornamento nel gestionale.'];
 }
 
+function bookingCreatedEmail(appointment) {
+  const customer = appointment?.customers || {};
+  const phone = String(customer.phone_normalized || '').trim();
+  const services = (appointment?.appointment_items || []).map((item) => item.service_name_snapshot).filter(Boolean).join(', ');
+  const staffName = appointment?.staff?.display_name || '';
+  const when = appointment?.starts_at ? formatRome(appointment.starts_at) : '';
+  const subject = `Nuova prenotazione — ${customer.name || 'cliente'}`;
+  const html = '<p>Nuova prenotazione dal sito.</p>' +
+    `<p>Cliente: ${escapeHtml(customer.name || '')}</p>` +
+    (phone ? `<p>Telefono: <a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></p>` : '') +
+    `<p>Servizio: ${escapeHtml(services || 'Non specificato')}</p>` +
+    `<p>Barbiere: ${escapeHtml(staffName || 'Non specificato')}</p>` +
+    `<p>Data e ora: ${escapeHtml(when)}</p>` +
+    `<p>Riferimento: ${escapeHtml(appointment?.reference || '')}</p>`;
+  return { subject, html };
+}
+
 async function sendResendEmail(config, event, appointment) {
   const payload = event.payload || {};
   const customer = appointment?.customers || {};
@@ -69,6 +92,20 @@ async function sendResendEmail(config, event, appointment) {
     ? String(payload.email || customer.email || '').trim()
     : config.barberEmail;
   if (!config.resendKey || !config.from || !recipient) return { skipped: true, channel: 'email' };
+  if (event.event_type === 'booking.created' && !toCustomer) {
+    const { subject, html } = bookingCreatedEmail(appointment);
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.resendKey}`,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': `sgarra-${event.idempotency_key}`.slice(0, 256)
+      },
+      body: JSON.stringify({ from: config.from, to: [recipient], subject, html })
+    });
+    if (!response.ok) throw new Error(`resend_${response.status}`);
+    return { sent: true, channel: 'email' };
+  }
   const services = (appointment?.appointment_items || []).map((item) => item.service_name_snapshot).join(' · ');
   const [title, intro] = notificationCopy(event, appointment);
   const reference = appointment?.reference || payload.reference || '';
