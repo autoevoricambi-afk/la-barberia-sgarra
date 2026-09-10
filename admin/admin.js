@@ -192,6 +192,21 @@ function appointmentCard(item) {
     contacts.append(phone, whatsapp);
     article.appendChild(contacts);
   }
+  if (item.customer_id) {
+    const historyLink = document.createElement('button');
+    historyLink.type = 'button';
+    historyLink.className = 'mini-button customer-history-link';
+    historyLink.textContent = 'Storico cliente';
+    historyLink.addEventListener('click', () => openCustomerHistory(item.customer_id, customer.name));
+    article.appendChild(historyLink);
+  }
+  const lastHistory = [...(item.appointment_status_history || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+  if (lastHistory?.reason?.startsWith('ATTENZIONE:')) {
+    const warning = document.createElement('p');
+    warning.className = 'customer-risk needs-attention';
+    warning.textContent = lastHistory.reason.replace(/^ATTENZIONE:\s*/, '');
+    article.appendChild(warning);
+  }
   if (item.notes) {
     const notes = document.createElement('p');
     notes.className = 'appointment-notes';
@@ -523,7 +538,69 @@ function openEdit(item) {
   document.getElementById('edit-start').value = toLocalInput(item.starts_at);
   document.getElementById('edit-notes').value = item.notes || '';
   document.getElementById('edit-status').textContent = '';
+  renderStatusHistory(item.appointment_status_history || []);
   editDialog.showModal();
+}
+
+const actorLabels = { customer: 'Cliente', staff: 'Barberia', system: 'Automatico' };
+
+function renderStatusHistory(entries) {
+  const root = document.getElementById('edit-history-log');
+  root.textContent = '';
+  if (!entries.length) {
+    root.innerHTML = '<p class="agenda-empty">Nessuna modifica registrata.</p>';
+    return;
+  }
+  [...entries]
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    .forEach((entry) => {
+      const row = document.createElement('p');
+      row.className = 'status-history-row';
+      const from = entry.from_status ? (statusLabels[entry.from_status] || entry.from_status) : 'Creato';
+      const to = statusLabels[entry.to_status] || entry.to_status;
+      const actor = actorLabels[entry.actor_type] || entry.actor_type || '';
+      row.textContent = `${formatDateTime(entry.created_at)} · ${from} → ${to} · ${actor}${entry.reason ? ` · ${entry.reason}` : ''}`;
+      root.appendChild(row);
+    });
+}
+
+async function openCustomerHistory(customerId, customerName) {
+  const dialog = document.getElementById('customer-history-dialog');
+  document.getElementById('customer-history-title').textContent = customerName || 'Cliente';
+  const root = document.getElementById('customer-history-list');
+  root.innerHTML = '<p class="agenda-empty">Caricamento…</p>';
+  dialog.showModal();
+  try {
+    const data = await api(`/api/admin/appointments?customerId=${encodeURIComponent(customerId)}`);
+    renderCustomerHistory(data.appointments || []);
+  } catch (error) {
+    root.innerHTML = `<p class="agenda-empty">${error.message}</p>`;
+  }
+}
+
+function renderCustomerHistory(items) {
+  const root = document.getElementById('customer-history-list');
+  root.textContent = '';
+  if (!items.length) {
+    root.innerHTML = '<p class="agenda-empty">Nessuna visita registrata.</p>';
+    return;
+  }
+  items.forEach((item) => {
+    const row = document.createElement('article');
+    row.className = 'operation-card history-entry';
+    const services = (item.appointment_items || []).map((entry) => entry.service_name_snapshot).filter(Boolean).join(' · ');
+    const price = (item.appointment_items || []).reduce((sum, entry) => sum + Number(entry.price_cents_snapshot || 0), 0);
+    const top = document.createElement('div');
+    top.innerHTML = '<strong></strong><span class="status-badge"></span>';
+    top.querySelector('strong').textContent = formatDateTime(item.starts_at);
+    const badge = top.querySelector('.status-badge');
+    badge.className = `status-badge status-${item.status}`;
+    badge.textContent = statusLabels[item.status] || item.status;
+    const detail = document.createElement('p');
+    detail.textContent = `${services || 'Servizio non disponibile'} · ${item.staff?.display_name || 'Barbiere non disponibile'} · €${(price / 100).toFixed(2).replace('.', ',')}`;
+    row.append(top, detail);
+    root.appendChild(row);
+  });
 }
 
 async function deleteBlock(blockId) {
@@ -613,9 +690,10 @@ document.getElementById('block-form').addEventListener('submit', async (event) =
 document.getElementById('product-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const status = document.getElementById('inventory-status');
+  const initialStock = Number(String(document.getElementById('product-stock').value).replace(',', '.'));
   status.textContent = 'Aggiunta prodotto…';
   try {
-    await api('/api/admin/inventory', {
+    const data = await api('/api/admin/inventory', {
       method: 'POST',
       body: JSON.stringify({
         name: document.getElementById('product-name').value,
@@ -625,10 +703,18 @@ document.getElementById('product-form').addEventListener('submit', async (event)
         active: true
       })
     });
+    if (Number.isFinite(initialStock) && initialStock > 0 && data.product?.id) {
+      status.textContent = 'Registrazione scorta iniziale…';
+      await api('/api/admin/inventory', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'movement', productId: data.product.id, quantityDelta: initialStock, reason: 'restock' })
+      });
+    }
     event.currentTarget.reset();
     document.getElementById('product-unit').value = 'pz';
+    document.getElementById('product-stock').value = '0';
     document.getElementById('product-threshold').value = '2';
-    status.textContent = 'Prodotto aggiunto. Ora registra il primo carico.';
+    status.textContent = 'Prodotto aggiunto.';
     await loadInventory();
   } catch (error) {
     status.textContent = error.message;

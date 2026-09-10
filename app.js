@@ -22,7 +22,9 @@
     initAnchors();
     initLightbox();
     initServices();
+    initServiceTabs();
     initBooking();
+    initWaitlist();
     syncBookingConfig();
   }
 
@@ -62,8 +64,16 @@
       const target = document.querySelector(link.getAttribute('href'));
       if (!target) return;
       event.preventDefault();
+      if (link.dataset.staffShortcut) applyStaffShortcut(link.dataset.staffShortcut);
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+  }
+
+  function applyStaffShortcut(staffSlug) {
+    const select = $('#booking-staff');
+    if (!select || !Array.from(select.options).some((option) => option.value === staffSlug)) return;
+    select.value = staffSlug;
+    if ($('#booking-date')?.value) loadAvailability();
   }
 
   function initLightbox() {
@@ -121,14 +131,41 @@
   }
 
   function updateSelectedServices() {
-    const box = $('#selected-services');
     const labels = selectedServiceLabels();
+    renderSelectionChips($('#selected-services'), labels, 'Seleziona uno o più servizi qui sopra.');
+    renderSelectionChips($('#selected-services-inline'), labels, 'Nessun servizio selezionato.');
+    const counter = $('#service-selection-count');
+    if (counter) counter.textContent = labels.length ? `${labels.length} di 4 selezionati` : 'Fino a 4 servizi';
+  }
+
+  function renderSelectionChips(box, labels, emptyText) {
     if (!box) return;
     if (!labels.length) {
-      box.innerHTML = '<span class="empty-selection">Seleziona uno o più servizi qui sopra.</span>';
+      box.innerHTML = `<span class="empty-selection">${escapeHtml(emptyText)}</span>`;
       return;
     }
     box.innerHTML = labels.map((label) => `<span class="chip">${escapeHtml(label)}</span>`).join('');
+  }
+
+  function initServiceTabs() {
+    const tabs = $$('.service-tab');
+    const panels = $$('.service-grid[data-service-panel]');
+    if (!tabs.length || !panels.length) return;
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.serviceTab;
+        tabs.forEach((item) => {
+          const active = item === tab;
+          item.classList.toggle('is-active', active);
+          item.setAttribute('aria-selected', String(active));
+          item.tabIndex = active ? 0 : -1;
+        });
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.servicePanel !== target;
+        });
+      });
+    });
   }
 
   function initBooking() {
@@ -142,6 +179,85 @@
     date.addEventListener('change', loadAvailability);
     staff.addEventListener('change', loadAvailability);
     form.addEventListener('submit', submitBooking);
+  }
+
+  function initWaitlist() {
+    const button = $('#waitlist-submit');
+    if (!button) return;
+    button.addEventListener('click', submitWaitlist);
+  }
+
+  async function submitWaitlist() {
+    const status = $('#waitlist-status');
+    const setStatus = (message, state) => {
+      if (!status) return;
+      status.textContent = message;
+      status.dataset.state = state || '';
+    };
+
+    const serviceIds = selectedServiceIds();
+    const date = $('#booking-date')?.value || '';
+    if (!serviceIds.length || !date) {
+      setStatus('Seleziona servizio e giorno prima di iscriverti.', 'error');
+      return;
+    }
+
+    const nameField = $('#customer-name');
+    const phoneField = $('#customer-phone');
+    const name = nameField?.value || '';
+    const phone = phoneField?.value || '';
+    if (name.trim().length < 2) {
+      setStatus('Inserisci il tuo nome nel modulo qui sopra.', 'error');
+      nameField?.focus();
+      return;
+    }
+    if (!phone.trim()) {
+      setStatus('Inserisci il tuo telefono nel modulo qui sopra.', 'error');
+      phoneField?.focus();
+      return;
+    }
+    const consent = $('#booking-consent');
+    if (consent && !consent.checked) {
+      setStatus('Conferma di aver letto l’informativa privacy qui sopra.', 'error');
+      consent.focus();
+      return;
+    }
+
+    const staffChoice = $('#booking-staff')?.value || 'any';
+    const staffSlug = staffChoice === 'any' ? STAFF[0].slug : staffChoice;
+    const timePreference = $('#waitlist-time-preference')?.value || 'any';
+    const button = $('#waitlist-submit');
+    if (button) button.disabled = true;
+    setStatus('Iscrizione in corso…');
+
+    try {
+      const response = await fetch(`${API_BASE}/waitlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          serviceIds,
+          staffSlug,
+          desiredDate: date,
+          timePreference,
+          name,
+          phone,
+          email: $('#customer-email')?.value || '',
+          notes: $('#booking-notes')?.value || '',
+          privacyVersion: PRIVACY_VERSION,
+          idempotencyKey: createRequestKey(),
+          website: $('#booking-website')?.value || ''
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.ok !== true) {
+        throw new Error(payload.error?.message || 'Iscrizione non riuscita.');
+      }
+      setStatus('Iscrizione registrata. Ti avviseremo appena si libera un orario.', 'ok');
+    } catch (error) {
+      setStatus(error.message || 'Iscrizione non riuscita.', 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
   }
 
   function syncDateLimits() {
@@ -168,7 +284,7 @@
       syncDateLimits();
       if (status) {
         status.textContent = bookingEnabled
-          ? 'Prenotazione live attiva · 2 postazioni · slot ogni 30 minuti.'
+          ? 'Prenotazione live attiva · 2 barbieri disponibili · slot ogni 30 minuti.'
           : 'Prenotazione temporaneamente non disponibile.';
         status.dataset.state = bookingEnabled ? 'ok' : 'error';
       }
@@ -205,7 +321,7 @@
       return;
     }
     if (!bookingEnabled) {
-      time.innerHTML = '<option value="">Booking non disponibile</option>';
+      time.innerHTML = '<option value="">Prenotazione non disponibile</option>';
       return;
     }
 
@@ -216,7 +332,7 @@
 
       if (!slots.length) {
         time.innerHTML = '<option value="">Nessun posto disponibile</option>';
-        if (hint) hint.textContent = 'Non risultano posti liberi per questa combinazione.';
+        if (hint) hint.textContent = 'Nessun orario libero per il giorno e il servizio scelti.';
         if (waitlist) waitlist.hidden = false;
         return;
       }
@@ -227,8 +343,8 @@
       time.disabled = false;
       if (hint) hint.textContent = 'Disponibilità reale aggiornata adesso.';
     } catch (error) {
-      time.innerHTML = '<option value="">Disponibilità non raggiungibile</option>';
-      if (hint) hint.textContent = error.message || 'Riprova tra poco.';
+      time.innerHTML = '<option value="">Orari non disponibili</option>';
+      if (hint) hint.textContent = error.message || 'Non riusciamo a mostrare gli orari in questo momento. Riprova o scrivici su WhatsApp.';
     }
   }
 
@@ -283,7 +399,7 @@
     const response = await fetch(`${API_BASE}/availability?${params.toString()}`, { headers: { Accept: 'application/json' } });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || payload.ok !== true || !Array.isArray(payload.slots)) {
-      throw new Error(payload.error?.message || 'Disponibilità non raggiungibile.');
+      throw new Error(payload.error?.message || 'Non riusciamo a mostrare gli orari in questo momento. Riprova o scrivici su WhatsApp.');
     }
     return payload;
   }
@@ -327,7 +443,7 @@
       : [staffChoice];
 
     if (submit) submit.disabled = true;
-    if (status) status.textContent = 'Registrazione appuntamento…';
+    if (status) status.textContent = 'Stiamo registrando il tuo appuntamento…';
 
     let lastError = 'Prenotazione non riuscita.';
     for (const staffSlug of candidates) {
@@ -344,7 +460,7 @@
           if (status) status.textContent = '';
           if (success) {
             success.hidden = false;
-            success.innerHTML = `<p class="eyebrow">Prenotazione ricevuta</p><h3>Appuntamento registrato.</h3><p><strong>${escapeHtml(barber)}</strong><br>${escapeHtml(formatDateTime(startsAt))}${reference ? `<br>Riferimento: ${escapeHtml(reference)}` : ''}</p><p>La prenotazione è già visibile nel gestionale della barberia.</p>`;
+            success.innerHTML = `<p class="eyebrow">Prenotazione ricevuta</p><h3>Prenotazione confermata! A presto in barberia.</h3><p><strong>${escapeHtml(barber)}</strong><br>${escapeHtml(formatDateTime(startsAt))}${reference ? `<br>Riferimento: ${escapeHtml(reference)}` : ''}</p>`;
             success.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
           await loadAvailability();

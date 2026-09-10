@@ -1,13 +1,12 @@
-const CACHE_VERSION = 'sgarra-static-v3';
+const CACHE_VERSION = 'sgarra-static-v4';
 const STATIC_CORE = [
   '/',
   '/index.html',
   '/styles.css',
-  '/config.js',
-  '/script.js',
+  '/app.js',
   '/site.webmanifest',
   '/assets/brand/logo-256.webp',
-  '/assets/images/hero/hero-640.webp'
+  '/assets/images/hero/hero-premium.webp'
 ];
 
 self.addEventListener('install', (event) => {

@@ -19,7 +19,7 @@
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
   <link rel="manifest" href="site.webmanifest" />
   <link rel="preload" as="image" href="assets/images/hero/hero-premium.webp" type="image/webp" fetchpriority="high" />
-  <link rel="stylesheet" href="styles.css?v=20260909-clean1" />
+  <link rel="stylesheet" href="styles.css?v=20260910-restyle1" />
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -29,7 +29,7 @@
     "telephone":"+393296410828",
     "image":"https://labarberiasgarra.it/assets/images/hero/hero-premium.webp",
     "address":{"@type":"PostalAddress","streetAddress":"Via Corato 48","postalCode":"76123","addressLocality":"Andria","addressRegion":"BT","addressCountry":"IT"},
-    "sameAs":["https://www.instagram.com/la_barberia_sgarra/"]
+    "sameAs":["https://www.instagram.com/la_barberia_sgarra/","https://www.tiktok.com/@labarberiasgarra"]
   }
   </script>
 </head>
@@ -44,11 +44,11 @@
       </a>
       <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Apri il menu"><span></span><span></span><span></span></button>
       <nav class="main-nav" id="main-nav" aria-label="Navigazione principale">
-        <a href="#lavori">Lavori</a>
-        <a href="#team">Team</a>
         <a href="#servizi">Servizi</a>
-        <a href="#prenota">Prenota</a>
+        <a href="#team">Team</a>
+        <a href="#lavori">Lavori</a>
         <a href="#dove-siamo">Dove siamo</a>
+        <a href="#prenota">Prenota</a>
       </nav>
     </div>
   </header>
@@ -66,7 +66,8 @@
           <a class="button button-ghost" href="#lavori">Guarda i lavori</a>
         </div>
         <div class="hero-facts">
-          <span>2 postazioni</span><span>Slot ogni 30 minuti</span><span>Disponibilità reale</span>
+          <span>2 barbieri disponibili</span><span>Slot ogni 30 minuti</span><span>Disponibilità reale</span>
+          <a class="hero-fact-rating" href="https://share.google/LM2DalvQ9mnTZB1kh" target="_blank" rel="noopener noreferrer"><span class="rating-stars" aria-hidden="true">★★★★★</span> 5,0 su 25 recensioni Google</a>
         </div>
       </div>
     </section>
@@ -76,6 +77,59 @@
         <a href="https://wa.me/393296410828" target="_blank" rel="noopener noreferrer">WhatsApp</a>
         <a href="https://share.google/LM2DalvQ9mnTZB1kh" target="_blank" rel="noopener noreferrer">Indicazioni</a>
         <a href="https://www.instagram.com/la_barberia_sgarra/" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <a href="https://www.tiktok.com/@labarberiasgarra" target="_blank" rel="noopener noreferrer">TikTok</a>
+      </div>
+    </section>
+
+    <section class="section" id="servizi">
+      <div class="container">
+        <header class="section-head"><p class="eyebrow">Servizi</p><h2>Tutto il listino, subito visibile.</h2><p>Puoi selezionare fino a quattro servizi per la stessa prenotazione.</p></header>
+
+        <p class="field-label service-highlights-label">Scelte rapide</p>
+        <div class="service-highlights">
+          <label class="service-card service-card-highlight"><input type="checkbox" name="service" value="Taglio + barba" data-service-id="taglio-barba" data-service-label="Taglio + barba" /><span><strong>Taglio + barba</strong><small>30 min</small><b>€17</b></span></label>
+          <label class="service-card service-card-highlight"><input type="checkbox" name="service" value="Completo" data-service-id="completo" data-service-label="Completo" /><span><strong>Completo</strong><small>30 min</small><b>€23</b></span></label>
+        </div>
+
+        <div class="booking-selected service-selection-summary">
+          <div class="service-selection-head"><span class="field-label">Hai scelto</span><span class="service-selection-count" id="service-selection-count">Fino a 4 servizi</span></div>
+          <div class="chips" id="selected-services-inline"><span class="empty-selection">Nessun servizio selezionato.</span></div>
+        </div>
+
+        <div class="service-tabs" role="tablist" aria-label="Categorie servizi">
+          <button type="button" class="service-tab is-active" id="service-tab-capelli" role="tab" aria-selected="true" aria-controls="service-panel-capelli" data-service-tab="capelli">Capelli</button>
+          <button type="button" class="service-tab" id="service-tab-barba" role="tab" aria-selected="false" aria-controls="service-panel-barba" data-service-tab="barba" tabindex="-1">Barba &amp; Extra</button>
+        </div>
+
+        <div class="service-grid" id="service-panel-capelli" role="tabpanel" aria-labelledby="service-tab-capelli" data-service-panel="capelli">
+          <label class="service-card"><input type="checkbox" name="service" value="Taglio" data-service-id="taglio" data-service-label="Taglio" /><span><strong>Taglio</strong><small>30 min</small><b>€12</b></span></label>
+          <label class="service-card"><input type="checkbox" name="service" value="Taglio + shampoo" data-service-id="taglio-shampoo" data-service-label="Taglio + shampoo" /><span><strong>Taglio + shampoo</strong><small>30 min</small><b>€15</b></span></label>
+          <label class="service-card"><input type="checkbox" name="service" value="Taglio baby" data-service-id="taglio-baby" data-service-label="Taglio baby" /><span><strong>Taglio baby</strong><small>30 min</small><b>€10</b></span></label>
+          <label class="service-card"><input type="checkbox" name="service" value="Shampoo" data-service-id="shampoo" data-service-label="Shampoo" /><span><strong>Shampoo</strong><small>30 min</small><b>€5</b></span></label>
+          <label class="service-card"><input type="checkbox" name="service" value="Pettinata" data-service-id="pettinata" data-service-label="Pettinata" /><span><strong>Pettinata</strong><small>30 min</small><b>€3</b></span></label>
+        </div>
+        <div class="service-grid" id="service-panel-barba" role="tabpanel" aria-labelledby="service-tab-barba" data-service-panel="barba" hidden>
+          <label class="service-card"><input type="checkbox" name="service" value="Barba" data-service-id="barba" data-service-label="Barba" /><span><strong>Barba</strong><small>30 min</small><b>€6</b></span></label>
+          <label class="service-card"><input type="checkbox" name="service" value="Barba old school" data-service-id="barba-old-school" data-service-label="Barba old school" /><span><strong>Barba old school</strong><small>30 min</small><b>€9</b></span></label>
+          <label class="service-card"><input type="checkbox" name="service" value="Sopracciglia" data-service-id="sopracciglia" data-service-label="Sopracciglia" /><span><strong>Sopracciglia</strong><small>30 min</small><b>€3</b></span></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-soft" id="team">
+      <div class="container">
+        <header class="section-head"><p class="eyebrow">Team</p><h2>Due barbieri. Un’unica agenda.</h2><p>Puoi scegliere il professionista oppure lasciare al sistema il primo posto disponibile.</p></header>
+        <div class="team-grid">
+          <article class="team-card team-card-photo">
+            <img src="assets/images/paolo/paolo-lavoro.webp" width="323" height="406" alt="Paolo Sgarra al lavoro" loading="lazy" />
+            <div><span class="team-role">Titolare</span><h3>Paolo Sgarra</h3><p>Il titolare, per chi vuole sempre lo stesso barbiere.</p><a href="#prenota" data-staff-shortcut="paolo-sgarra">Prenota con Paolo →</a></div>
+          </article>
+          <article class="team-card team-card-photo">
+            <!-- DA SOSTITUIRE: selfie allo specchio fornita come placeholder, non un ritratto dedicato -->
+            <img class="is-portrait-crop" src="assets/images/giuseppe/giuseppe-collaboratore.webp" width="900" height="1197" alt="Giuseppe, barbiere della Barberia Sgarra" loading="lazy" />
+            <div><span class="team-role">Barbiere</span><h3>Giuseppe</h3><p>Quando Paolo è occupato, Giuseppe è pronto a prenderti in carico allo stesso orario.</p><a href="#prenota" data-staff-shortcut="giuseppe">Prenota con Giuseppe →</a></div>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -93,36 +147,54 @@
       </div>
     </section>
 
-    <section class="section section-soft" id="team">
+    <section class="section" id="recensioni">
       <div class="container">
-        <header class="section-head"><p class="eyebrow">Team</p><h2>Due barbieri. Un’unica agenda.</h2><p>Puoi scegliere il professionista oppure lasciare al sistema il primo posto disponibile.</p></header>
-        <div class="team-grid">
-          <article class="team-card team-card-photo">
-            <img src="assets/images/paolo/paolo-lavoro.webp" width="323" height="406" alt="Paolo Sgarra al lavoro" loading="lazy" />
-            <div><span class="team-role">Titolare</span><h3>Paolo Sgarra</h3><p>Agenda indipendente e prenotazione diretta.</p><a href="#prenota" data-staff-shortcut="paolo-sgarra">Prenota con Paolo →</a></div>
+        <header class="section-head">
+          <p class="eyebrow">Recensioni</p>
+          <h2>Cosa dicono i clienti.</h2>
+          <a class="rating-badge" href="https://share.google/LM2DalvQ9mnTZB1kh" target="_blank" rel="noopener noreferrer"><span class="rating-stars" aria-hidden="true">★★★★★</span> 5,0 su 25 recensioni Google</a>
+        </header>
+        <div class="reviews-grid">
+          <article class="review-card">
+            <span class="rating-stars" aria-hidden="true">★★★★★</span>
+            <p>“Professionalità gentilezza spettacolare. Noi veniamo sempre da Corato solo per lui, il numero 1. Lo sceglierei altre mille volte, top.”</p>
+            <div class="review-author"><strong>Mirko king</strong><span>7 mesi fa · Google</span></div>
           </article>
-          <article class="team-card team-card-giuseppe">
-            <div class="team-monogram" aria-hidden="true">G</div>
-            <div><span class="team-role">Barbiere</span><h3>Giuseppe</h3><p>Seconda postazione attiva: quando Paolo è occupato, Giuseppe può restare disponibile nello stesso orario.</p><a href="#prenota" data-staff-shortcut="giuseppe">Prenota con Giuseppe →</a></div>
+          <article class="review-card">
+            <span class="rating-stars" aria-hidden="true">★★★★★</span>
+            <p>“Io vengo da Corato, molto puntuale pulito e soprattutto professionale. Ve lo consiglio 👍”</p>
+            <div class="review-author"><strong>Francesco Di Gennaro</strong><span>7 mesi fa · Google</span></div>
+          </article>
+          <article class="review-card">
+            <span class="rating-stars" aria-hidden="true">★★★★★</span>
+            <p>“Locale davvero accogliente, i ragazzi ti mettono davvero a proprio agio. Per quanto riguarda il lavoro sono molto professionali. Ottimo centro.”</p>
+            <div class="review-author"><strong>Umberto Patruno</strong><span>2 anni fa · Google</span></div>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="servizi">
+    <section class="section section-soft" id="locale">
       <div class="container">
-        <header class="section-head"><p class="eyebrow">Servizi</p><h2>Tutto il listino, subito visibile.</h2><p>Puoi selezionare fino a quattro servizi per la stessa prenotazione.</p></header>
-        <div class="service-grid" id="service-grid">
-          <label class="service-card"><input type="checkbox" name="service" value="Taglio" data-service-id="taglio" data-service-label="Taglio" /><span><strong>Taglio</strong><small>30 min</small><b>€12</b></span></label>
-          <label class="service-card"><input type="checkbox" name="service" value="Taglio + shampoo" data-service-id="taglio-shampoo" data-service-label="Taglio + shampoo" /><span><strong>Taglio + shampoo</strong><small>30 min</small><b>€15</b></span></label>
-          <label class="service-card"><input type="checkbox" name="service" value="Taglio + barba" data-service-id="taglio-barba" data-service-label="Taglio + barba" /><span><strong>Taglio + barba</strong><small>30 min</small><b>€17</b></span></label>
-          <label class="service-card"><input type="checkbox" name="service" value="Taglio baby" data-service-id="taglio-baby" data-service-label="Taglio baby" /><span><strong>Taglio baby</strong><small>30 min</small><b>€10</b></span></label>
-          <label class="service-card"><input type="checkbox" name="service" value="Completo" data-service-id="completo" data-service-label="Completo" /><span><strong>Completo</strong><small>30 min</small><b>€23</b></span></label>
-          <label class="service-card"><input type="checkbox" name="service" value="Barba" data-service-id="barba" data-service-label="Barba" /><span><strong>Barba</strong><small>30 min</small><b>€6</b></span></label>
-          <label class="service-card"><input type="checkbox" name="service" value="Barba old school" data-service-id="barba-old-school" data-service-label="Barba old school" /><span><strong>Barba old school</strong><small>30 min</small><b>€9</b></span></label>
-          <label class="service-card"><input type="checkbox" name="service" value="Sopracciglia" data-service-id="sopracciglia" data-service-label="Sopracciglia" /><span><strong>Sopracciglia</strong><small>30 min</small><b>€3</b></span></label>
-          <label class="service-card"><input type="checkbox" name="service" value="Shampoo" data-service-id="shampoo" data-service-label="Shampoo" /><span><strong>Shampoo</strong><small>30 min</small><b>€5</b></span></label>
-          <label class="service-card"><input type="checkbox" name="service" value="Pettinata" data-service-id="pettinata" data-service-label="Pettinata" /><span><strong>Pettinata</strong><small>30 min</small><b>€3</b></span></label>
+        <header class="section-head"><p class="eyebrow">Il locale rinnovato</p><h2>La barberia, oggi.</h2></header>
+        <div class="studio-grid">
+          <img src="assets/images/studio/interno-01.webp" alt="Interno della barberia rinnovata" loading="lazy" />
+          <img src="assets/images/studio/interno-02.webp" alt="Postazioni e illuminazione della barberia" loading="lazy" />
+          <img src="assets/images/studio/interno-03.webp" alt="Ambiente della Barberia Sgarra" loading="lazy" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="dove-siamo">
+      <div class="container location-grid">
+        <div><p class="eyebrow">Dove siamo</p><h2>Via Corato 48, Andria.</h2><p>Mar–Gio 08:30–13:00 / 15:30–20:30<br />Ven 08:30–13:00 / 14:30–20:30<br />Sab 08:30–20:30<br />Lun e Dom chiuso</p></div>
+        <div class="location-actions">
+          <a class="button button-primary" href="https://share.google/LM2DalvQ9mnTZB1kh" target="_blank" rel="noopener noreferrer">Apri Maps</a>
+          <a class="button button-secondary" href="tel:+393296410828">Chiama</a>
+          <a class="button button-secondary" href="https://wa.me/393296410828" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        </div>
+        <div class="location-map">
+          <iframe src="https://www.google.com/maps?q=Via+Corato+48,+76123+Andria+BT&output=embed" title="Mappa: La Barberia Sgarra, Via Corato 48, Andria" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
       </div>
     </section>
@@ -132,8 +204,8 @@
         <div class="booking-intro">
           <p class="eyebrow">Prenotazione live</p>
           <h2>Trova il posto e prenota.</h2>
-          <p>Il sistema controlla Paolo e Giuseppe in tempo reale. Se entrambi sono liberi, lo stesso orario mostra 2 posti; dopo la prima prenotazione ne resta 1.</p>
-          <p class="system-status" id="booking-system-status" role="status">Verifica disponibilità del sistema…</p>
+          <p>Controlliamo Paolo e Giuseppe in tempo reale. Se entrambi sono liberi, lo stesso orario mostra 2 posti; dopo la prima prenotazione ne resta 1.</p>
+          <p class="system-status" id="booking-system-status" role="status">Verifica disponibilità…</p>
         </div>
 
         <form id="booking-form" class="booking-form" novalidate>
@@ -181,30 +253,18 @@
 
         <section class="booking-success" id="booking-success" hidden aria-live="polite"></section>
         <section class="waitlist-box" id="waitlist-box" hidden>
-          <h3>Nessun posto libero?</h3><p>La lista d’attesa verrà rifinita nel prossimo passaggio senza modificare il motore di prenotazione.</p>
+          <h3>Nessun posto libero per questo giorno?</h3>
+          <p>Iscriviti alla lista d’attesa con nome e telefono già inseriti sopra: ti avviseremo appena si libera un orario compatibile.</p>
+          <label class="field">Fascia oraria preferita
+            <select id="waitlist-time-preference">
+              <option value="any">Indifferente</option>
+              <option value="morning">Mattina</option>
+              <option value="afternoon">Pomeriggio</option>
+            </select>
+          </label>
+          <button class="button button-secondary" type="button" id="waitlist-submit">Iscrivimi alla lista d’attesa</button>
+          <p class="booking-status" id="waitlist-status" role="status" aria-live="polite"></p>
         </section>
-      </div>
-    </section>
-
-    <section class="section section-soft" id="locale">
-      <div class="container">
-        <header class="section-head"><p class="eyebrow">Il locale rinnovato</p><h2>La barberia, oggi.</h2></header>
-        <div class="studio-grid">
-          <img src="assets/images/studio/interno-01.webp" alt="Interno della barberia rinnovata" loading="lazy" />
-          <img src="assets/images/studio/interno-02.webp" alt="Postazioni e illuminazione della barberia" loading="lazy" />
-          <img src="assets/images/studio/interno-03.webp" alt="Ambiente della Barberia Sgarra" loading="lazy" />
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="dove-siamo">
-      <div class="container location-grid">
-        <div><p class="eyebrow">Dove siamo</p><h2>Via Corato 48, Andria.</h2><p>Mar–Gio 08:30–13:00 / 15:30–20:30<br />Ven 08:30–13:00 / 14:30–20:30<br />Sab 08:30–20:30<br />Lun e Dom chiuso</p></div>
-        <div class="location-actions">
-          <a class="button button-primary" href="https://share.google/LM2DalvQ9mnTZB1kh" target="_blank" rel="noopener noreferrer">Apri Maps</a>
-          <a class="button button-secondary" href="tel:+393296410828">Chiama</a>
-          <a class="button button-secondary" href="https://wa.me/393296410828" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-        </div>
       </div>
     </section>
   </main>
@@ -212,7 +272,8 @@
   <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-brand"><img src="assets/brand/logo-256.webp" width="256" height="256" alt="" /><div><strong>La Barberia Sgarra</strong><span>Via Corato 48 · Andria</span></div></div>
-      <nav class="footer-nav"><a href="#lavori">Lavori</a><a href="#servizi">Servizi</a><a href="#prenota">Prenota</a><a href="privacy.html">Privacy</a></nav>
+      <nav class="footer-nav"><a href="#servizi">Servizi</a><a href="#lavori">Lavori</a><a href="#prenota">Prenota</a><a href="privacy.html">Privacy</a></nav>
+      <nav class="footer-nav footer-social" aria-label="Social"><a href="https://www.instagram.com/la_barberia_sgarra/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="https://www.tiktok.com/@labarberiasgarra" target="_blank" rel="noopener noreferrer">TikTok</a></nav>
       <p class="footer-copy">© <span id="year"></span> La Barberia Sgarra</p>
     </div>
   </footer>
@@ -226,6 +287,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260909-clean1" defer></script>
+  <script src="app.js?v=20260910-restyle1" defer></script>
 </body>
 </html>

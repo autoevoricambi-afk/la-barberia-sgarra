@@ -55,7 +55,8 @@ function notificationCopy(event, appointment) {
     'waitlist.created': ['Nuova richiesta in lista d’attesa', 'Un cliente è entrato nella lista d’attesa.'],
     'waitlist.slot_available': ['Si è liberato un posto', 'Si è liberato un posto compatibile con la tua richiesta. Contatta subito Paolo per verificarne la disponibilità.'],
     'deposit.status_changed': ['Aggiornamento caparra', 'Lo stato della caparra del tuo appuntamento è stato aggiornato.'],
-    'inventory.low_stock': ['Prodotto in esaurimento', `Paolo, ${payload.productName || 'un prodotto'} sta finendo: ne restano ${payload.quantity ?? 'poche unità'} ${payload.unit || ''}.`]
+    'inventory.low_stock': ['Prodotto in esaurimento', `Paolo, ${payload.productName || 'un prodotto'} sta finendo: ne restano ${payload.quantity ?? 'poche unità'} ${payload.unit || ''}.`],
+    'appointment.needs_manual_reassignment': ['Serve la tua attenzione', `L'appuntamento ${payload.reference || ''} non può essere riassegnato in automatico: nessun barbiere compatibile è libero. Controlla il gestionale.`]
   };
   return copies[event.event_type] || ['Aggiornamento Barberia Sgarra', 'C’è un nuovo aggiornamento nel gestionale.'];
 }

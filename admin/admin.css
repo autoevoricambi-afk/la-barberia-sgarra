@@ -34,6 +34,7 @@
 .appointment-phone { display: inline-block; margin-top: 0.55rem; }
 .appointment-notes { margin: 0.65rem 0 0; padding-left: 0.65rem; border-left: 2px solid var(--brass); color: var(--cream-soft); }
 .customer-risk { margin: 0.65rem 0 0; padding: 0.55rem 0.65rem; border: 1px solid rgba(239, 170, 90, 0.38); background: rgba(120, 62, 20, 0.18); color: #f0c879; font-size: 0.82rem; }
+.customer-risk.needs-attention { border-color: rgba(239, 100, 90, 0.5); background: rgba(120, 30, 20, 0.22); color: #f0a89a; font-weight: 700; }
 .status-badge { align-self: start; padding: 0.28rem 0.45rem; border: 1px solid var(--line-strong); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; }
 .status-pending { color: #f0c879; }
 .status-confirmed { color: #9bd5a9; }
@@ -90,6 +91,10 @@
 .operation-card span { display: block; margin-top: 0.2rem; color: var(--muted); font-size: 0.75rem; }
 .operation-card p { margin: 0.65rem 0 0; color: var(--cream-soft); }
 .inventory-card.is-low { border-color: rgba(239, 170, 90, 0.55); box-shadow: inset 3px 0 #d99b48; }
+.status-history-log { display: grid; gap: 0.4rem; max-height: 220px; overflow-y: auto; }
+.status-history-row { margin: 0; padding: 0.5rem 0.6rem; border: 1px solid var(--line); background: rgba(5, 7, 6, 0.5); font-size: 0.8rem; color: var(--cream-soft); }
+.customer-history-link { margin-top: 0.55rem; }
+#customer-history-list { display: grid; gap: 0.65rem; margin-top: 1rem; max-height: 60vh; overflow-y: auto; }
 .inventory-top { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
 .inventory-quantity { text-align: right; }
 .inventory-quantity strong { font-size: 1.8rem; line-height: 1; color: var(--brass-soft); }

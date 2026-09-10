@@ -41,13 +41,26 @@ async function flushNotification(reference, context, event) {
   catch (error) { logError(context, `${event}_notification_deferred`, error); }
 }
 
+async function detectOverdueNoShows(context) {
+  try {
+    const marked = await supabaseRequest('/rest/v1/rpc/admin_detect_overdue_no_shows', {
+      method: 'POST', body: { p_grace_minutes: 20 }
+    });
+    if (marked) logInfo(context, 'admin_no_show_autodetect', { marked });
+  } catch (error) {
+    logError(context, 'admin_no_show_autodetect_failed', error);
+  }
+}
+
 async function listAppointments(request, response, context) {
+  if (request.query?.customerId) return customerHistory(request, response, context);
+  await detectOverdueNoShows(context);
   const from = validDate(request.query?.from) ? request.query.from : new Date().toISOString().slice(0, 10);
   const toDate = new Date(`${from}T00:00:00Z`);
   toDate.setUTCDate(toDate.getUTCDate() + 7);
   const to = validDate(request.query?.to) ? request.query.to : toDate.toISOString().slice(0, 10);
   const params = new URLSearchParams({
-    select: 'id,reference,status,staff_id,starts_at,ends_at,notes,source,created_at,deposit_required,deposit_amount_cents,deposit_status,late_cancellation,customers(name,phone_normalized,email,completed_visits,late_cancellations,no_show_count,deposit_required),appointment_items(service_name_snapshot,service_id)',
+    select: 'id,reference,status,staff_id,customer_id,starts_at,ends_at,notes,source,created_at,deposit_required,deposit_amount_cents,deposit_status,late_cancellation,customers(name,phone_normalized,email,completed_visits,late_cancellations,no_show_count,deposit_required),appointment_items(service_name_snapshot,service_id),appointment_status_history(from_status,to_status,actor_type,reason,created_at)',
     starts_at: `gte.${from}T00:00:00+00:00`,
     order: 'starts_at.asc'
   });
@@ -59,6 +72,25 @@ async function listAppointments(request, response, context) {
   } catch (error) {
     logError(context, 'admin_agenda_failed', error);
     return sendJson(response, 502, { ok: false, error: { code: 'agenda_unavailable', message: 'Agenda temporaneamente non disponibile.' } });
+  }
+}
+
+async function customerHistory(request, response, context) {
+  const customerId = normalizeText(request.query.customerId, 40);
+  if (!isValidUuid(customerId)) return sendJson(response, 400, { ok: false, error: { code: 'invalid_customer', message: 'Cliente non valido.' } });
+  const params = new URLSearchParams({
+    select: 'id,reference,status,starts_at,appointment_items(service_name_snapshot,price_cents_snapshot),staff(display_name)',
+    customer_id: `eq.${customerId}`,
+    order: 'starts_at.desc',
+    limit: '50'
+  });
+  try {
+    const rows = await supabaseRequest(`/rest/v1/appointments?${params.toString()}`);
+    logInfo(context, 'admin_customer_history_loaded', { count: Array.isArray(rows) ? rows.length : 0 });
+    return sendJson(response, 200, { ok: true, appointments: Array.isArray(rows) ? rows : [] });
+  } catch (error) {
+    logError(context, 'admin_customer_history_failed', error);
+    return sendJson(response, 502, { ok: false, error: { code: 'history_unavailable', message: 'Storico cliente non disponibile.' } });
   }
 }
 
